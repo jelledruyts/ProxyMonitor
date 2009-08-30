@@ -6,12 +6,12 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("JelleDruyts.ProxyMonitor")]
+[assembly: AssemblyTitle("ProxyMonitor")]
 [assembly: AssemblyDescription("Monitors the network and detects the proxy server to use.")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("JelleDruyts.ProxyMonitor")]
-[assembly: AssemblyCopyright("Copyright © Jelle Druyts 2008")]
+[assembly: AssemblyProduct("ProxyMonitor")]
+[assembly: AssemblyCopyright("Copyright © Jelle Druyts 2009")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 

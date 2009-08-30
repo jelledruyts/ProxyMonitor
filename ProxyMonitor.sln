@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 10.00
 # Visual Studio 2008
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "JelleDruyts.ProxyMonitor", "JelleDruyts.ProxyMonitor\JelleDruyts.ProxyMonitor.csproj", "{A94C362E-AC2F-4C99-AAC2-9AF6F4450C87}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ProxyMonitor", "ProxyMonitor\ProxyMonitor.csproj", "{A94C362E-AC2F-4C99-AAC2-9AF6F4450C87}"
 EndProject
 Global
 	GlobalSection(TeamFoundationVersionControl) = preSolution
@@ -9,9 +9,9 @@ Global
 		SccEnterpriseProvider = {4CA58AB2-18FA-4F8D-95D4-32DDF27D184C}
 		SccTeamFoundationServer = https://tfs10.codeplex.com/
 		SccLocalPath0 = .
-		SccProjectUniqueName1 = JelleDruyts.ProxyMonitor\\JelleDruyts.ProxyMonitor.csproj
-		SccProjectName1 = JelleDruyts.ProxyMonitor
-		SccLocalPath1 = JelleDruyts.ProxyMonitor
+		SccProjectUniqueName1 = ProxyMonitor\\ProxyMonitor.csproj
+		SccProjectName1 = ProxyMonitor
+		SccLocalPath1 = ProxyMonitor
 	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU

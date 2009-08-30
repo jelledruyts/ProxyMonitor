@@ -32,34 +32,48 @@
     </style>
 </head>
 <body>
-    <h1>Proxy Monitor</h1>
-    <h2>Introduction</h2>
-    <p>Proxy Monitor is a small application that monitors the network and auto-detects the
-        internet proxy server to use.</p>
+    <h1>
+        Proxy Monitor</h1>
+    <h2>
+        Introduction</h2>
+    <p>
+        Proxy Monitor is a small application that monitors the network and auto-detects
+        the internet proxy server to use.</p>
     <p>
         <img src="Images/NotificationIcon.png" alt="Proxy Monitor Notification Icon" /></p>
-    <h2>Installation</h2>
-    <p>Before this application can be used, the .NET Framework Version 2.0 must be installed.
-        It is available for free at <a href="http://msdn.microsoft.com/netframework/downloads/updates/default.aspx"
+    <h2>
+        Installation</h2>
+    <p>
+        Before this application can be used, the .NET Framework Version 2.0 must be installed.
+        It is included in recent versions of Windows and available for free through Windows
+        Update or at <a href="http://msdn.microsoft.com/netframework/downloads/updates/default.aspx"
             target="_blank">Microsoft's download page for the .NET Framework</a>.</p>
-    <p>The application can be installed by just copying it to a destination directory of
+    <p>
+        The application can be installed by just copying it to a destination directory of
         your choice. Uninstalling is just a matter of deleting the files again – there are
         no registry settings or other external items that are modified by the application.</p>
-    <h2>Usage</h2>
-    <p>The application can be started as a regular application, which will make it run as
-        an icon in the system notification area. When started, it will auto-detect the proxy
-        server to use. It will also automatically re-detect the proxy server when the computer’s
-        network address has changed.</p>
-    <p>You can right-click the icon to manually set the proxy server or to trigger an auto-detection.</p>
+    <h2>
+        Usage</h2>
+    <p>
+        The application can be started as a regular application, which will make it run
+        as an icon in the system notification area. When started, it will auto-detect the
+        proxy server to use. It will also automatically re-detect the proxy server when
+        the computer’s network address has changed.</p>
+    <p>
+        You can right-click the icon to manually set the proxy server or to trigger an auto-detection.</p>
     <p>
         <img src="Images/MenuItems.png" alt="Proxy Monitor Menu" /></p>
-    <p>The application can also be run from the command-line with the /detect flag to auto-detect
+    <p>
+        The application can also be run from the command-line with the /detect flag to auto-detect
         the proxy and exit immediately (e.g. when the computer starts up).</p>
-    <h2>Configuration</h2>
-    <p>The application must be configured to include the definitions of the known proxy
+    <h2>
+        Configuration</h2>
+    <p>
+        The application must be configured to include the definitions of the known proxy
         servers. This involves changing the ProxyMonitor.exe.config file in a text editor
         to list all known proxy servers in the <code>&lt;proxyServers&gt;</code> element.</p>
-    <p>Each proxy server must be represented as a <code>&lt;proxyServer&gt;</code> element
+    <p>
+        Each proxy server must be represented as a <code>&lt;proxyServer&gt;</code> element
         with the following attributes:</p>
     <ul>
         <li><code>name</code>: the friendly name of the proxy server. This will show up in the
@@ -77,23 +91,28 @@
         <li><code>skipAutoDetect</code>: skips auto-detection of this proxy server, so that
             it only can be set manually through the context menu.</li>
     </ul>
-    <p>Only the <code>name</code> and either the <code>host</code> or <code>autoConfigUrl</code>
+    <p>
+        Only the <code>name</code> and either the <code>host</code> or <code>autoConfigUrl</code>
         attributes are mandatory.</p>
-    <p>Each proxy server is in checked to see if it is available by attempting to download
+    <p>
+        Each proxy server is in checked to see if it is available by attempting to download
         the <code>autoConfigUrl</code> or by sending a ping command to the <code>host</code>.
         When the download succeeded or a reply is received, the proxy server will be used
         and optionally the <code>command</code> is executed. If needed, the ping timeout
         value can be modified in the <code>pingTimeout</code> attribute of the <code>&lt;proxyConfiguration&gt;</code>
         element (the default is 1000 milliseconds).</p>
-    <p>It is also possible to disable all proxy change notifications (balloon tips) by setting
-        the <code>disableNotifications</code> attribute of the <code>&lt;proxyConfiguration&gt;</code>
-        element to <code>true</code> (the default is <code>false</code>). </p>
-    <p>A sample configuration file looks as follows:</p>
+    <p>
+        It is also possible to disable all proxy change notifications (balloon tips) by
+        setting the <code>disableNotifications</code> attribute of the <code>&lt;proxyConfiguration&gt;</code>
+        element to <code>true</code> (the default is <code>false</code>).
+    </p>
+    <p>
+        A sample configuration file looks as follows:</p>
     <pre>&lt;?xml version="1.0" encoding="utf-8" ?&gt;
 &lt;configuration&gt;
   &lt;configSections&gt;
     &lt;section name="proxyConfiguration"
-      type="JelleDruyts.ProxyMonitor.Configuration.ProxyConfiguration, ProxyMonitor"/&gt;
+      type="ProxyMonitor.Configuration.ProxyConfiguration, ProxyMonitor"/&gt;
   &lt;/configSections&gt;
   &lt;proxyConfiguration pingTimeout="1000" disableNotifications="false"&gt;
     &lt;proxyServers&gt;
@@ -111,29 +130,35 @@
     &lt;/proxyServers&gt;
   &lt;/proxyConfiguration&gt;
 &lt;/configuration&gt;</pre>
-    <h2>What's New?</h2>
-    <h2>v1.2 (08/09/2008)</h2>
+    <h2>
+        What's New?</h2>
+    <h2>
+        v1.2 (08/09/2008)</h2>
     <ul>
         <li>Added the <code>skipAutoDetect</code> attribute to support proxies that are only
             set manually.</li>
         <li>Fixed the bug where Interet Explorer would override the proxy settings again (at
             random) to their previous values.</li>
     </ul>
-    <h2>v1.1.0 (11/09/2007)</h2>
+    <h2>
+        v1.1.0 (11/09/2007)</h2>
     <ul>
         <li>Added the <code>bypassList</code> attribute to support the proxy bypass list.</li>
         <li>Added the <code>disableNotifications</code> attribute to allow disabling notifications
             (balloon tips).</li>
     </ul>
-    <h2>v1.0.60905 (05/09/2006)</h2>
+    <h2>
+        v1.0.60905 (05/09/2006)</h2>
     <ul>
         <li>The configured proxy servers are now checked in parallel to speed up proxy detection.</li>
     </ul>
-    <h2>v1.0.60807 (07/08/2006)</h2>
+    <h2>
+        v1.0.60807 (07/08/2006)</h2>
     <ul>
         <li>A custom command can now be executed when the proxy server is set.</li>
     </ul>
-    <h2>v1.0.60805 (05/08/2006)</h2>
+    <h2>
+        v1.0.60805 (05/08/2006)</h2>
     <ul>
         <li>Besides pinging the <code>host</code>, the <code>autoConfigUrl</code> attribute
             of the <code>proxyServer</code> element is now used to determine if the proxy server
@@ -145,35 +170,72 @@
             was set.</li>
         <li>Better exception handling.</li>
     </ul>
-    <h2>v1.0.60802 (02/08/2006)</h2>
+    <h2>
+        v1.0.60802 (02/08/2006)</h2>
     <ul>
         <li>Initial Release.</li>
     </ul>
-    <h2>License</h2>
-    <p>&copy; 2006-2008, <a href="http://jelle.druyts.net" target="_blank">Jelle Druyts</a>
-    </p>
-    <p>This software is licensed as freeware.</p>
-    <pre style="font-size: xx-small;">Copyright (c) 2006-2008, Jelle Druyts (http://jelle.druyts.net/)
-All rights reserved.
- 
-Redistribution and use in source and binary forms, with or without modification, are permitted 
-provided that the following conditions are met: 
- 
-(1) Redistributions of source code must retain the above copyright notice, this list of 
-conditions and the following disclaimer. 
-(2) Redistributions in binary form must reproduce the above copyright notice, this list of 
-conditions and the following disclaimer in the documentation and/or other materials 
-provided with the distribution. 
-(3) The name of Jelle Druyts may not be used to endorse or promote products derived from
-this software without specific prior written permission.
-     
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS 
-OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY 
-AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR 
-CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL 
-DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, 
-DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER 
-IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT 
-OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.</pre>
+    <h2>
+        License</h2>
+    <pre style="font-size: small;">Microsoft Public License (Ms-PL)
+
+This license governs use of the accompanying software. If you use the software,
+you accept this license. If you do not accept the license, do not use the
+software.
+
+1. Definitions
+
+The terms "reproduce," "reproduction," "derivative works," and "distribution"
+have the same meaning here as under U.S. copyright law.
+
+A "contribution" is the original software, or any additions or changes to the
+software.
+
+A "contributor" is any person that distributes its contribution under this
+license.
+
+"Licensed patents" are a contributor's patent claims that read directly on its
+contribution.
+
+2. Grant of Rights
+
+(A) Copyright Grant- Subject to the terms of this license, including the
+license conditions and limitations in section 3, each contributor grants
+you a non-exclusive, worldwide, royalty-free copyright license to reproduce
+its contribution, prepare derivative works of its contribution, and distribute
+its contribution or any derivative works that you create.
+
+(B) Patent Grant- Subject to the terms of this license, including the license
+conditions and limitations in section 3, each contributor grants you a
+non-exclusive, worldwide, royalty-free license under its licensed patents to
+make, have made, use, sell, offer for sale, import, and/or otherwise dispose
+of its contribution in the software or derivative works of the contribution in
+the software.
+
+3. Conditions and Limitations
+
+(A) No Trademark License- This license does not grant you rights to use any
+contributors' name, logo, or trademarks.
+
+(B) If you bring a patent claim against any contributor over patents that you
+claim are infringed by the software, your patent license from such contributor
+to the software ends automatically.
+
+(C) If you distribute any portion of the software, you must retain all
+copyright, patent, trademark, and attribution notices that are present in
+the software.
+
+(D) If you distribute any portion of the software in source code form, you may
+do so only under this license by including a complete copy of this license
+with your distribution. If you distribute any portion of the software in
+compiled or object code form, you may only do so under a license that complies
+with this license.
+
+(E) The software is licensed "as-is." You bear the risk of using it. The
+contributors give no express warranties, guarantees or conditions. You may
+have additional consumer rights under your local laws which this license cannot
+change. To the extent permitted under your local laws, the contributors exclude
+the implied warranties of merchantability, fitness for a particular purpose and
+non-infringement.</pre>
 </body>
 </html>

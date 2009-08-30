@@ -7,7 +7,7 @@
     <ProjectGuid>{A94C362E-AC2F-4C99-AAC2-9AF6F4450C87}</ProjectGuid>
     <OutputType>WinExe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>JelleDruyts.ProxyMonitor</RootNamespace>
+    <RootNamespace>ProxyMonitor</RootNamespace>
     <AssemblyName>ProxyMonitor</AssemblyName>
     <ApplicationIcon>Properties\ProxyOn.ico</ApplicationIcon>
     <AssemblyOriginatorKeyFile>..\..\..\..\JelleDruyts.snk</AssemblyOriginatorKeyFile>

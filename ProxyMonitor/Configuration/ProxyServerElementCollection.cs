@@ -1,6 +1,6 @@
 using System.Configuration;
 
-namespace JelleDruyts.ProxyMonitor.Configuration
+namespace ProxyMonitor.Configuration
 {
     /// <summary>
     /// Defines a collection of <see cref="ProxyServerElement"/> instances.

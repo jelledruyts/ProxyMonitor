@@ -1,6 +1,6 @@
 using System.Configuration;
 
-namespace JelleDruyts.ProxyMonitor.Configuration
+namespace ProxyMonitor.Configuration
 {
     /// <summary>
     /// The configuration settings for the proxy detector.

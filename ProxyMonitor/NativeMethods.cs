@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Runtime.InteropServices;
 
-namespace JelleDruyts.ProxyMonitor
+namespace ProxyMonitor
 {
     /// <summary>
     /// Contains members for Win32 interop.

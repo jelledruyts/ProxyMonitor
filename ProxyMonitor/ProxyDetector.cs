@@ -6,10 +6,10 @@ using System.Net;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using System.Threading;
-using JelleDruyts.ProxyMonitor.Configuration;
+using ProxyMonitor.Configuration;
 using Microsoft.Win32;
 
-namespace JelleDruyts.ProxyMonitor
+namespace ProxyMonitor
 {
     /// <summary>
     /// Detects and sets the current proxy server to use.

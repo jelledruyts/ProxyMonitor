@@ -3,10 +3,10 @@ using System.Net.NetworkInformation;
 using System.Reflection;
 using System.Text;
 using System.Windows.Forms;
-using JelleDruyts.ProxyMonitor.Configuration;
-using JelleDruyts.ProxyMonitor.Properties;
+using ProxyMonitor.Configuration;
+using ProxyMonitor.Properties;
 
-namespace JelleDruyts.ProxyMonitor
+namespace ProxyMonitor
 {
     /// <summary>
     /// Monitors the current proxy server to use in the notification area (system tray).
@@ -115,8 +115,8 @@ namespace JelleDruyts.ProxyMonitor
         {
             StringBuilder aboutText = new StringBuilder();
             Version version = Assembly.GetExecutingAssembly().GetName().Version;
-            aboutText.AppendLine("Proxy Monitor v" + version.ToString(3));
-            aboutText.AppendLine("(c) Jelle Druyts - http://jelle.druyts.net").AppendLine();
+            aboutText.AppendLine("Proxy Monitor v" + version.ToString(2));
+            aboutText.AppendLine("http://proxymonitor.codeplex.com").AppendLine();
             aboutText.AppendLine("Monitors the network and detects the proxy server to use.").AppendLine();
             aboutText.AppendLine("Usage: ProxyMonitor.exe [/detect]");
             aboutText.AppendLine("     /detect: auto-detect the proxy and exit immediately");

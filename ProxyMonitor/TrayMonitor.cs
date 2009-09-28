@@ -1,8 +1,11 @@
 using System;
+using System.Collections.Generic;
 using System.Net.NetworkInformation;
 using System.Reflection;
 using System.Text;
 using System.Windows.Forms;
+using System.Threading;
+
 using ProxyMonitor.Configuration;
 using ProxyMonitor.Properties;
 
@@ -14,6 +17,31 @@ namespace ProxyMonitor
     internal sealed class TrayMonitor : IDisposable
     {
         #region Fields
+
+        /// <summary>
+        /// Info required to set a proxy.  It's attached to menu items as the tag value.
+        /// </summary>
+        private class ProxyMenuInfo
+        {
+            public ProxyServerElement proxy;
+            public ConnectionElement connection;
+
+            public ProxyMenuInfo(ProxyServerElement p, ConnectionElement c)
+            {
+                proxy = p;
+                connection = c;
+            }
+        };
+
+        /// <summary>
+        /// List of menu items that represent proxies that can be set, regardless of where they are in the menu hierarchy.
+        /// </summary>
+        /// <remarks>
+        /// DEH: Before connections were added, all items were at the same level in the menu, which made it easy to iterate over them.  
+        /// Now that the menu can be hierarchically structured with proxies under connections, that method is cumbersome.  So instead, 
+        /// this list tracks all of the proxy menu items to make it easy to iterate over them.
+        /// </remarks>
+        private List<MenuItem> proxyMenuList = new List<MenuItem>();
 
         /// <summary>
         /// The notify icon to use.
@@ -40,6 +68,8 @@ namespace ProxyMonitor
         /// <param name="detectAndQuit">Determines if the application should detect the proxy and quit immediately.</param>
         public TrayMonitor(bool detectAndQuit)
         {
+            ConnectionElementCollection connections = ProxyConfiguration.Instance.Connections;
+
             this.notifyIcon = new NotifyIcon();
 
             if (detectAndQuit)
@@ -62,15 +92,44 @@ namespace ProxyMonitor
             });
             contextMenu.MenuItems.Add("-");
             proxiesMenu = contextMenu.MenuItems.Add("&Set Proxy");
+
             MenuItem proxyMenu = proxiesMenu.MenuItems.Add("None");
+            proxyMenu.Tag = new ProxyMenuInfo(null, null);      // None = null proxy, null connection
             proxyMenu.Click += new EventHandler(ProxyMenu_Click);
+            proxyMenuList.Add(proxyMenu);
+
             proxiesMenu.MenuItems.Add("-");
-            foreach (ProxyServerElement configuredProxy in ProxyDetector.ConfiguredProxyServers)
+
+            // DEH: If no connections, then setup menu as before.  
+            //      If connections, create menu options for each connection, with their proxies nested below them.
+            if (connections.Count == 0)
             {
-                proxyMenu = proxiesMenu.MenuItems.Add(configuredProxy.Name);
-                proxyMenu.Tag = configuredProxy;
-                proxyMenu.Click += new EventHandler(ProxyMenu_Click);
+                foreach (ProxyServerElement configuredProxy in ProxyDetector.ConfiguredProxyServers)
+                {
+                    proxyMenu = proxiesMenu.MenuItems.Add(configuredProxy.Name);
+                    proxyMenu.Tag = new ProxyMenuInfo(configuredProxy, null);
+                    proxyMenu.Click += new EventHandler(ProxyMenu_Click);
+                    proxyMenuList.Add(proxyMenu);
+                }
             }
+            else
+            {
+                // Loop through connections and create nested menu structure
+                foreach (ConnectionElement connection in connections)
+                {
+                    MenuItem connectionMenu = proxiesMenu.MenuItems.Add(connection.Name);
+
+                    foreach (ProxyServerElement configuredProxy in connection.ProxyServers)
+                    {
+                        proxyMenu = connectionMenu.MenuItems.Add(configuredProxy.Name);
+                        proxyMenu.Tag = new ProxyMenuInfo(configuredProxy, connection);
+                        proxyMenu.Click += new EventHandler(ProxyMenu_Click);
+                        proxyMenuList.Add(proxyMenu);
+                    }
+                }
+            }
+
+
             contextMenu.MenuItems.Add("&Detect Proxy", delegate
             {
                 DetectProxy();
@@ -128,12 +187,12 @@ namespace ProxyMonitor
         /// </summary>
         /// <param name="sender">The source of the event.</param>
         /// <param name="e">The <see cref="T:System.EventArgs"/> instance containing the event data.</param>
-        private void ProxyMenu_Click(object sender, EventArgs e)
+        void ProxyMenu_Click(object sender, EventArgs e)
         {
             MenuItem selectedProxyMenu = (MenuItem)sender;
-            ProxyServerElement proxy = (ProxyServerElement)selectedProxyMenu.Tag;
-            ProxyDetector.SetProxyServer(proxy);
-            ShowSelectedProxy(proxy);
+            ProxyMenuInfo pmi = (ProxyMenuInfo)selectedProxyMenu.Tag;
+            ProxyDetector.SetProxyServer(pmi.proxy, pmi.connection);
+            ShowSelectedProxy(pmi.proxy, pmi.connection);
         }
 
         #endregion
@@ -145,34 +204,84 @@ namespace ProxyMonitor
         /// </summary>
         public void DetectProxy()
         {
-            this.notifyIcon.Text = "Detecting proxy...";
-            ProxyServerElement proxy = ProxyDetector.DetectProxyServer();
-            ShowSelectedProxy(proxy);
+            ConnectionElementCollection connections = ProxyConfiguration.Instance.Connections;
+            ProxyServerElement found_proxy;
+
+            if (connections.Count == 0)
+            {
+                // No connections, so detect using pre-connection method.
+
+                found_proxy = ProxyDetector.DetectProxyForConnection((ConnectionElement)null);
+                ShowSelectedProxy(found_proxy, (ConnectionElement)null);
+            }
+            else
+            {
+                // Loop through all connections, and detect the proxy for each
+                foreach (ConnectionElement connection in connections)
+                {
+                    try
+                    {
+                        int detectionDelay = Int32.Parse(connection.DetectionDelay);
+
+                        if (detectionDelay > 0)
+                        {
+                            Thread.Sleep(detectionDelay);
+                        }
+                    }
+                    catch (FormatException)
+                    {
+                        // Ignore.  A FormatException is caused by a detection delay value that is not a valid integer
+                    }
+
+                    found_proxy = ProxyDetector.DetectProxyForConnection(connection);
+                    ShowSelectedProxy(found_proxy, connection);
+                }
+            }
         }
+
 
         /// <summary>
         /// Shows the selected proxy.
         /// </summary>
         /// <param name="proxy">The proxy.</param>
-        private void ShowSelectedProxy(ProxyServerElement proxy)
+        /// <param name="connection">The connection, or null if no connection specified in config</param>
+        private void ShowSelectedProxy(ProxyServerElement proxy, ConnectionElement connection)
         {
             // Set the tray icon and a message.
             string message = null;
             if (proxy == null)
             {
-                message = "No proxy set";
+                if (connection == null)
+                {
+                    message = "No proxy set";
+                }
+                else
+                {
+                    message = connection.Name + ": No proxy set";
+                }
                 this.notifyIcon.Icon = Resources.ProxyOff;
             }
             else
             {
-                message = "Current proxy: " + proxy.Name;
+                if (connection == null)
+                {
+                    message = "Current proxy: " + proxy.Name;
+                }
+                else
+                {
+                    message = connection.Name + " proxy: " + proxy.Name;
+                }
                 this.notifyIcon.Icon = Resources.ProxyOn;
             }
 
             // Select the corresponding menu item.
-            foreach (MenuItem proxyMenu in this.proxiesMenu.MenuItems)
+            foreach (MenuItem proxyMenu in proxyMenuList)
             {
-                proxyMenu.Checked = (proxyMenu.Tag == proxy);
+                ProxyMenuInfo pmi = (ProxyMenuInfo)proxyMenu.Tag;
+                if (pmi.connection == connection)
+                {
+                    proxyMenu.Checked = (pmi.proxy == proxy);
+                }
             }
 
             this.notifyIcon.Text = message;
@@ -181,8 +290,10 @@ namespace ProxyMonitor
             if (!ProxyConfiguration.Instance.DisableNotifications)
             {
                 this.notifyIcon.ShowBalloonTip(10, "Proxy Monitor", message, ToolTipIcon.Info);
+                Thread.Sleep(2000);  // This ensures that the ballon has a chance to be read before the next proxy is detected
             }
         }
+
 
         #endregion
 
@@ -193,6 +304,7 @@ namespace ProxyMonitor
         /// </summary>
         public void Dispose()
         {
+            // DEH: TODO I think I need to update this to dispose of the nested menu structures...
             if (this.contextMenu != null)
             {
                 this.contextMenu.Dispose();

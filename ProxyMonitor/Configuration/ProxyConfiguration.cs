@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Configuration;
 
 namespace ProxyMonitor.Configuration
@@ -11,6 +12,7 @@ namespace ProxyMonitor.Configuration
 
         private const string ConfigurationSectionName = "proxyConfiguration";
         private const string ProxyServersPropertyName = "proxyServers";
+        private const string ConnectionsPropertyName = "connections";   // DEH, 7/31/09: Added.
         private const string PingTimeoutPropertyName = "pingTimeout";
         private const string DisableNotificationsPropertyName = "disableNotifications";
 
@@ -65,15 +67,27 @@ namespace ProxyMonitor.Configuration
             }
         }
 
+
         /// <summary>
         /// Gets the configured proxy servers.
         /// </summary>
-        [ConfigurationProperty(ProxyServersPropertyName, IsDefaultCollection = true, IsRequired = true)]
+        [ConfigurationProperty(ProxyServersPropertyName, IsDefaultCollection = false, IsRequired = true)]
         public ProxyServerElementCollection ProxyServers
         {
             get
             {
                 return (ProxyServerElementCollection)base[ProxyServersPropertyName];
+            }
+        }
+
+
+        // DEH, 7/31/09: Adding a new top-level group: "Connection"
+        [ConfigurationProperty(ConnectionsPropertyName, IsDefaultCollection = false, IsRequired = true)]
+        public ConnectionElementCollection Connections
+        {
+            get
+            {
+                return (ConnectionElementCollection)base[ConnectionsPropertyName];
             }
         }
 

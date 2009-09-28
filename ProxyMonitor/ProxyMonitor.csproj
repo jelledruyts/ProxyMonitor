@@ -58,6 +58,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Configuration\ConnectionElement.cs" />
+    <Compile Include="Configuration\ConnectionElementCollection.cs" />
     <Compile Include="Configuration\ProxyConfiguration.cs" />
     <Compile Include="Configuration\ProxyServerElement.cs" />
     <Compile Include="Configuration\ProxyServerElementCollection.cs" />
@@ -86,6 +88,7 @@
       <DependentUpon>Settings.settings</DependentUpon>
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
     </Compile>
+    <Compile Include="WininetProxy.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Properties\ProxyOn.ico" />

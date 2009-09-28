@@ -5,9 +5,11 @@ using System.Globalization;
 using System.Net;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
+using System.Text;
 using System.Threading;
 using ProxyMonitor.Configuration;
 using Microsoft.Win32;
+using System.Runtime.InteropServices;
 
 namespace ProxyMonitor
 {
@@ -56,11 +58,15 @@ namespace ProxyMonitor
         #region Detect Proxy Server
 
         /// <summary>
-        /// Detects the proxy.
+        /// Detects the proxy for a particular connection (or LAN if connection is null).
         /// </summary>
         /// <returns>The proxy that was detected.</returns>
-        public static ProxyServerElement DetectProxyServer()
+        public static ProxyServerElement DetectProxyForConnection(ConnectionElement connection)
         {
+            ProxyServerElementCollection potential_proxies;
+
+            potential_proxies = (connection == (ConnectionElement)null) ? ConfiguredProxyServers : connection.ProxyServers;
+
             lock (lockObject)
             {
                 Trace.WriteLine("Detecting proxy to use...");
@@ -69,7 +75,7 @@ namespace ProxyMonitor
 
                 // Queue async operations to detect the proxy.
                 List<IAsyncResult> results = new List<IAsyncResult>();
-                foreach (ProxyServerElement configuredProxy in ConfiguredProxyServers)
+                foreach (ProxyServerElement configuredProxy in potential_proxies)
                 {
                     if (!configuredProxy.SkipAutoDetect)
                     {
@@ -108,7 +114,7 @@ namespace ProxyMonitor
                     }
                 }
 
-                SetProxyServer(detectedProxy);
+                SetProxyServer(detectedProxy, connection);
             }
             return detectedProxy;
         }
@@ -123,13 +129,13 @@ namespace ProxyMonitor
             {
                 if (IsUrlReachable(proxy.AutoConfigUrl))
                 {
-                    Trace.WriteLine(string.Format(CultureInfo.CurrentCulture, "Checked {0}: AutoConfigUrl is reachable.", proxy.Name));
+                    Trace.WriteLine(string.Format(CultureInfo.CurrentCulture, "Checked {0}: AutoConfigUrl is reachable.", proxy.Name)); 
                     detectedProxy = proxy;
                     waitHandle.Set();
                     return;
                 }
             }
-            
+
             if (!string.IsNullOrEmpty(proxy.Host))
             {
                 if (IsHostReachable(proxy.Host, ProxyConfiguration.Instance.PingTimeout))
@@ -203,12 +209,14 @@ namespace ProxyMonitor
         /// Sets the proxy server.
         /// </summary>
         /// <param name="proxy">The proxy server to set.</param>
-        public static void SetProxyServer(ProxyServerElement proxy)
+        /// <param name="connection">The connection to set, or null for the LAN connection</param>
+        public static void SetProxyServer(ProxyServerElement proxy, ConnectionElement connection)
         {
             int proxyEnable = 0;
             string proxyServer = "";
             string proxyOverride = "";
             string proxyAutoConfigURL = "";
+            string connection_name = (connection == (ConnectionElement)null) ? "" : connection.Name;
 
             if (proxy != null)
             {
@@ -233,17 +241,7 @@ namespace ProxyMonitor
                 Trace.WriteLine("Disabling proxy server");
             }
 
-            using (RegistryKey regKey = Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Internet Settings", true))
-            {
-                regKey.SetValue("ProxyEnable", proxyEnable, RegistryValueKind.DWord);
-                regKey.SetValue("ProxyServer", proxyServer, RegistryValueKind.String);
-                regKey.SetValue("ProxyOverride", proxyOverride, RegistryValueKind.String);
-                regKey.SetValue("AutoConfigURL", proxyAutoConfigURL, RegistryValueKind.String);
-            }
-
-            // Notify other applications that the internet settings have changed.
-            NativeMethods.InternetSetOption(IntPtr.Zero, NativeMethods.INTERNET_OPTION_SETTINGS_CHANGED, IntPtr.Zero, 0);
-            NativeMethods.InternetSetOption(IntPtr.Zero, NativeMethods.INTERNET_OPTION_REFRESH, IntPtr.Zero, 0);
+            WininetProxy.SetProxyInfo(connection_name, proxyServer, proxyOverride, proxyAutoConfigURL);
 
             if (proxy != null && !string.IsNullOrEmpty(proxy.Command))
             {

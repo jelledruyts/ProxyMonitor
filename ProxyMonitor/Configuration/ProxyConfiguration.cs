@@ -1,5 +1,5 @@
-using System.Collections.Generic;
 using System.Configuration;
+using System.Collections.Generic;
 
 namespace ProxyMonitor.Configuration
 {
@@ -12,9 +12,23 @@ namespace ProxyMonitor.Configuration
 
         private const string ConfigurationSectionName = "proxyConfiguration";
         private const string ProxyServersPropertyName = "proxyServers";
-        private const string ConnectionsPropertyName = "connections";   // DEH, 7/31/09: Added.
+        private const string ConnectionsPropertyName = "connections";
         private const string PingTimeoutPropertyName = "pingTimeout";
         private const string DisableNotificationsPropertyName = "disableNotifications";
+
+        #endregion
+
+        #region Fields
+
+        /// <summary>
+        /// Contains the cached LAN pseudo-connection.
+        /// </summary>
+        private ConnectionElement lanConnection;
+
+        /// <summary>
+        /// Contains all connections, including the LAN pseudo-connection if it exists.
+        /// </summary>
+        private ICollection<ConnectionElement> allConnections;
 
         #endregion
 
@@ -52,22 +66,6 @@ namespace ProxyMonitor.Configuration
             }
         }
 
-        #endregion
-
-        #region Methods
-
-        /// <summary>
-        /// Gets the configuration settings instance.
-        /// </summary>
-        public static ProxyConfiguration Instance
-        {
-            get
-            {
-                return ConfigurationManager.GetSection(ConfigurationSectionName) as ProxyConfiguration;
-            }
-        }
-
-
         /// <summary>
         /// Gets the configured proxy servers.
         /// </summary>
@@ -80,14 +78,74 @@ namespace ProxyMonitor.Configuration
             }
         }
 
-
-        // DEH, 7/31/09: Adding a new top-level group: "Connection"
+        /// <summary>
+        /// Gets the configured connections.
+        /// </summary>
         [ConfigurationProperty(ConnectionsPropertyName, IsDefaultCollection = false, IsRequired = true)]
         public ConnectionElementCollection Connections
         {
             get
             {
                 return (ConnectionElementCollection)base[ConnectionsPropertyName];
+            }
+        }
+
+        #endregion
+
+        #region Convenience Properties For LAN Pseudo-Connection
+
+        /// <summary>
+        /// Gets the LAN connection, which is the pseudo-connection holding all the root proxy servers.
+        /// </summary>
+        public ConnectionElement LanConnection
+        {
+            get
+            {
+                if (this.lanConnection == null && this.ProxyServers.Count > 0)
+                {
+                    this.lanConnection = new ConnectionElement("LAN", 0, this.ProxyServers, true);
+                }
+                return this.lanConnection;
+            }
+        }
+
+        /// <summary>
+        /// Gets all connections, including the LAN pseudo-connection if it exists.
+        /// </summary>
+        public ICollection<ConnectionElement> AllConnections
+        {
+            get
+            {
+                if (this.allConnections == null)
+                {
+                    this.allConnections = new List<ConnectionElement>();
+                    if (this.LanConnection != null)
+                    {
+                        this.allConnections.Add(this.LanConnection);
+                    }
+                    foreach (ConnectionElement connection in this.Connections)
+                    {
+                        this.allConnections.Add(connection);
+                    }
+                }
+                return this.allConnections;
+            }
+        }
+
+        #endregion
+
+        #region Static Singleton
+
+        private static ProxyConfiguration instance = ConfigurationManager.GetSection(ConfigurationSectionName) as ProxyConfiguration;
+
+        /// <summary>
+        /// Gets the configuration settings instance.
+        /// </summary>
+        public static ProxyConfiguration Instance
+        {
+            get
+            {
+                return instance;
             }
         }
 

@@ -17,7 +17,7 @@ namespace ProxyMonitor.Configuration
         private const string BypassListPropertyName = "bypassList";
         private const string CommandPropertyName = "command";
         private const string SkipAutoDetectPropertyName = "skipAutoDetect";
-        
+
         #endregion
 
         #region Properties
@@ -26,15 +26,15 @@ namespace ProxyMonitor.Configuration
         /// Gets or sets the name of this proxy server.
         /// </summary>
         [ConfigurationProperty(NamePropertyName, IsRequired = true)]
-		public string Name
+        public string Name
         {
             get
             {
                 return (string)base[NamePropertyName];
             }
-            set 
+            set
             {
-                base[NamePropertyName] = value; 
+                base[NamePropertyName] = value;
             }
         }
 
@@ -42,22 +42,22 @@ namespace ProxyMonitor.Configuration
         /// Gets or sets the host of this proxy server.
         /// </summary>
         [ConfigurationProperty(HostPropertyName, IsRequired = false)]
-		public string Host
+        public string Host
         {
-            get 
+            get
             {
-                return (string)base[HostPropertyName]; 
+                return (string)base[HostPropertyName];
             }
-            set 
+            set
             {
-                base[HostPropertyName] = value; 
+                base[HostPropertyName] = value;
             }
         }
 
         /// <summary>
         /// Gets or sets the port of this proxy server.
         /// </summary>
-        [ConfigurationProperty(PortPropertyName, IsRequired = false, DefaultValue=80)]
+        [ConfigurationProperty(PortPropertyName, IsRequired = false, DefaultValue = 80)]
         public int Port
         {
             get
@@ -134,7 +134,7 @@ namespace ProxyMonitor.Configuration
                 base[CommandPropertyName] = value;
             }
         }
-        
+
         /// <summary>
         /// Gets or sets a value that determines if this proxy server should not be auto-detected.
         /// </summary>

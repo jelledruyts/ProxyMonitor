@@ -1,8 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Runtime.InteropServices;
-
 
 namespace ProxyMonitor
 {
@@ -109,14 +106,14 @@ namespace ProxyMonitor
         /// <summary>
         /// Fetches the proxy information for a connection.
         /// </summary>
-        /// <param name="sConnection">IN: The name of the connection, or "" for LAN.</param>
+        /// <param name="sConnection">IN: The name of the connection, or null or empty for LAN.</param>
         /// <param name="sProxyServer">OUT: The proxy server</param>
         /// <param name="sProxyExceptions">OUT: The proxy exception list</param>
         /// <param name="sAutoConfigURL">OUT: The autoconfig URL</param>
         /// <returns>True if all is well.</returns>
         static public bool GetProxyInfo(String sConnection, out String sProxyServer, out String sProxyExceptions, out String sAutoConfigURL)
         {
-            InternetPerConnOptionList request; 
+            InternetPerConnOptionList request;
             InternetPerConnOption[] option_array = new InternetPerConnOption[4];
             bool success = false;
             IntPtr p;               // Utility pointer for iterating over unmanaged array
@@ -128,7 +125,7 @@ namespace ProxyMonitor
             sProxyServer = String.Empty;
             sProxyExceptions = String.Empty;
             sAutoConfigURL = String.Empty;
- 
+
             // Fill out the option array with the stuff we're looking for
             option_array[0].option = OptionType.INTERNET_PER_CONN_FLAGS;
             option_array[1].option = OptionType.INTERNET_PER_CONN_PROXY_SERVER;
@@ -143,7 +140,7 @@ namespace ProxyMonitor
             for (int i = 0; i < option_array.Length; i++)
             {
                 Marshal.StructureToPtr(option_array[i], p, false);
-                p = (IntPtr) ((int) p + Marshal.SizeOf(option_array[i]));
+                p = (IntPtr)((int)p + Marshal.SizeOf(option_array[i]));
             }
 
             // Set up the request structure
@@ -156,24 +153,26 @@ namespace ProxyMonitor
             request_len = request.dwSize;
 
             // Call the wininet.dll function to fetch the proxy info.
-            if (! InternetQueryOption(IntPtr.Zero, InternetOptionActions.INTERNET_OPTION_PER_CONNECTION_OPTION, ref request, ref request_len))
+            if (!InternetQueryOption(IntPtr.Zero, InternetOptionActions.INTERNET_OPTION_PER_CONNECTION_OPTION, ref request, ref request_len))
             {
                 int e = Marshal.GetLastWin32Error();  // Not used, but lets us peek at error value when we're debugging.
 
-                 success = false;
-            } else {
+                success = false;
+            }
+            else
+            {
 
                 // Unmarshal the now-filled-out unmanaged option array
                 p = buf;
                 for (int i = 0; i < option_array.Length; i++)
                 {
-                    option_array[i] = (InternetPerConnOption) Marshal.PtrToStructure(p, typeof(InternetPerConnOption));
+                    option_array[i] = (InternetPerConnOption)Marshal.PtrToStructure(p, typeof(InternetPerConnOption));
                     p = (IntPtr)((int)p + Marshal.SizeOf(option_array[i]));
                 }
 
                 // Unmarshal the string values we're looking for.
 
-                flags = (ProxyFlag) option_array[0].value.dwValue;
+                flags = (ProxyFlag)option_array[0].value.dwValue;
 
                 if ((flags & ProxyFlag.PROXY_TYPE_PROXY) == ProxyFlag.PROXY_TYPE_PROXY)
                 {
@@ -211,14 +210,14 @@ namespace ProxyMonitor
         /// <summary>
         /// Sets the proxy info for a connection
         /// </summary>
-        /// <param name="sConnection">IN: The name of the connection, or "LAN" for LAN</param>
+        /// <param name="sConnection">IN: The name of the connection, or null or empty for LAN.</param>
         /// <param name="sProxyServer">IN: Proxy server</param>
         /// <param name="sProxyExceptions">IN: Proxy exception list</param>
         /// <param name="sAutoConfigURL">IN: Autoconfig URL</param>
         /// <returns>True if all is well</returns>
         static public bool SetProxyInfo(String sConnection, String sProxyServer, String sProxyExceptions, String sAutoConfigURL)
         {
-            InternetPerConnOptionList request; 
+            InternetPerConnOptionList request;
             InternetPerConnOption[] option_array = new InternetPerConnOption[4];
             bool success = false;
             IntPtr p;                                       // Utility pointer for iterating over unmanaged array
@@ -229,10 +228,10 @@ namespace ProxyMonitor
             // Fill out the option array with the stuff we need to set.
             option_array[0].option = OptionType.INTERNET_PER_CONN_FLAGS;
             flags = ProxyFlag.PROXY_TYPE_DIRECT;
-            if (! String.IsNullOrEmpty(sProxyServer)) { flags |= ProxyFlag.PROXY_TYPE_PROXY; }
-            if (! String.IsNullOrEmpty(sAutoConfigURL)) { flags |= ProxyFlag.PROXY_TYPE_AUTO_PROXY_URL; }
-            option_array[0].value.dwValue = (int) flags;
- 
+            if (!String.IsNullOrEmpty(sProxyServer)) { flags |= ProxyFlag.PROXY_TYPE_PROXY; }
+            if (!String.IsNullOrEmpty(sAutoConfigURL)) { flags |= ProxyFlag.PROXY_TYPE_AUTO_PROXY_URL; }
+            option_array[0].value.dwValue = (int)flags;
+
             option_array[1].option = OptionType.INTERNET_PER_CONN_PROXY_SERVER;
             option_array[1].value.szValue = String.IsNullOrEmpty(sProxyServer) ? IntPtr.Zero : Marshal.StringToCoTaskMemAnsi(sProxyServer);
 
@@ -259,7 +258,7 @@ namespace ProxyMonitor
                 }
 
                 // Set up the request structure
-                request.szConnection = sConnection == "LAN" ? IntPtr.Zero : Marshal.StringToCoTaskMemAnsi(sConnection);
+                request.szConnection = (string.IsNullOrEmpty(sConnection) ? IntPtr.Zero : Marshal.StringToCoTaskMemAnsi(sConnection));
                 request.dwOptionCount = option_array.Length;
                 request.options = buf;
                 request.dwSize = Marshal.SizeOf(typeof(InternetPerConnOptionList));
@@ -277,7 +276,7 @@ namespace ProxyMonitor
                 }
                 else
                 {
-                      
+
                     // int e = Marshal.GetLastWin32Error();  // Not used, but lets us peek at error value when we're debugging.
 
                     // Notify the system/other programs that settings are changed

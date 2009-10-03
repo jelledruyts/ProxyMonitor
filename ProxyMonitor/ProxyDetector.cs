@@ -5,11 +5,8 @@ using System.Globalization;
 using System.Net;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
-using System.Text;
 using System.Threading;
 using ProxyMonitor.Configuration;
-using Microsoft.Win32;
-using System.Runtime.InteropServices;
 
 namespace ProxyMonitor
 {
@@ -19,18 +16,6 @@ namespace ProxyMonitor
     internal static class ProxyDetector
     {
         #region Fields & Properties
-
-        /// <summary>
-        /// Gets the configured proxy servers.
-        /// </summary>
-        /// <value>The configured proxy servers.</value>
-        public static ProxyServerElementCollection ConfiguredProxyServers
-        {
-            get
-            {
-                return ProxyConfiguration.Instance.ProxyServers;
-            }
-        }
 
         /// <summary>
         /// Stores the detected proxy.
@@ -45,7 +30,7 @@ namespace ProxyMonitor
         /// <summary>
         /// Represents the method that will check if a proxy is reachable.
         /// </summary>
-        /// <param name="proxy">The </param>
+        /// <param name="proxy">The proxy to check.</param>
         private delegate void CheckProxyDelegate(ProxyServerElement proxy);
 
         /// <summary>
@@ -55,27 +40,44 @@ namespace ProxyMonitor
 
         #endregion
 
-        #region Detect Proxy Server
+        #region Detect Proxy Servers
 
         /// <summary>
-        /// Detects the proxy for a particular connection (or LAN if connection is null).
+        /// Detects the proxy servers for all connections and sets them as the connection's <see cref="ConnectionElement.SelectedProxyServer"/>.
         /// </summary>
-        /// <returns>The proxy that was detected.</returns>
-        public static ProxyServerElement DetectProxyForConnection(ConnectionElement connection)
+        /// <returns>The proxy server that was detected for each connection.</returns>
+        public static void DetectProxyServers()
         {
-            ProxyServerElementCollection potential_proxies;
+            // Loop through all connections, and detect the proxy for each.
+            foreach (ConnectionElement connection in ProxyConfiguration.Instance.AllConnections)
+            {
+                if (!connection.SkipAutoDetect)
+                {
+                    if (connection.DetectionDelay > 0)
+                    {
+                        Log(string.Format(CultureInfo.CurrentCulture, "Waiting {0} milliseconds before detecting proxy on connection \"{1}\"...", connection.DetectionDelay, connection.Name));
+                        Thread.Sleep(connection.DetectionDelay);
+                    }
 
-            potential_proxies = (connection == (ConnectionElement)null) ? ConfiguredProxyServers : connection.ProxyServers;
+                    ProxyDetector.DetectProxy(connection);
+                }
+            }
+        }
 
+        /// <summary>
+        /// Detects the proxy for a particular connection.
+        /// </summary>
+        private static void DetectProxy(ConnectionElement connection)
+        {
             lock (lockObject)
             {
-                Trace.WriteLine("Detecting proxy to use...");
+                Log(string.Format(CultureInfo.CurrentCulture, "Detecting proxy to use on connection \"{0}\"...", connection.Name));
                 detectedProxy = null;
                 waitHandle = new AutoResetEvent(false);
 
                 // Queue async operations to detect the proxy.
                 List<IAsyncResult> results = new List<IAsyncResult>();
-                foreach (ProxyServerElement configuredProxy in potential_proxies)
+                foreach (ProxyServerElement configuredProxy in connection.ProxyServers)
                 {
                     if (!configuredProxy.SkipAutoDetect)
                     {
@@ -94,17 +96,17 @@ namespace ProxyMonitor
                     if (signaled)
                     {
                         // The wait handle was signaled, exit the loop.
-                        Trace.WriteLine("Wait handle was signaled");
+                        Log("Wait handle was signaled");
                         keepWaiting = false;
                     }
                     else
                     {
                         // Wait for all of the async operations to complete.
-                        Trace.WriteLine("Wait handle was not signaled");
+                        Log("Wait handle was not signaled");
                         keepWaiting = false;
                         foreach (IAsyncResult result in results)
                         {
-                            Trace.WriteLine(" - Async operation completed? " + result.IsCompleted);
+                            Log(" - Async operation completed? " + result.IsCompleted);
                             if (!result.IsCompleted)
                             {
                                 keepWaiting = true;
@@ -114,9 +116,9 @@ namespace ProxyMonitor
                     }
                 }
 
-                SetProxyServer(detectedProxy, connection);
+                connection.SelectedProxyServer = detectedProxy;
+                ApplySelectedProxyServer(connection);
             }
-            return detectedProxy;
         }
 
         /// <summary>
@@ -127,9 +129,10 @@ namespace ProxyMonitor
         {
             if (!string.IsNullOrEmpty(proxy.AutoConfigUrl))
             {
+                Log(string.Format(CultureInfo.CurrentCulture, "Checking \"{0}\": Downloading AutoConfigUrl.", proxy.Name));
                 if (IsUrlReachable(proxy.AutoConfigUrl))
                 {
-                    Trace.WriteLine(string.Format(CultureInfo.CurrentCulture, "Checked {0}: AutoConfigUrl is reachable.", proxy.Name)); 
+                    Log(string.Format(CultureInfo.CurrentCulture, "Checked \"{0}\": AutoConfigUrl is reachable.", proxy.Name));
                     detectedProxy = proxy;
                     waitHandle.Set();
                     return;
@@ -138,16 +141,17 @@ namespace ProxyMonitor
 
             if (!string.IsNullOrEmpty(proxy.Host))
             {
+                Log(string.Format(CultureInfo.CurrentCulture, "Checking \"{0}\": Pinging Host.", proxy.Name));
                 if (IsHostReachable(proxy.Host, ProxyConfiguration.Instance.PingTimeout))
                 {
-                    Trace.WriteLine(string.Format(CultureInfo.CurrentCulture, "Checked {0}: Host is reachable.", proxy.Name));
+                    Log(string.Format(CultureInfo.CurrentCulture, "Checked \"{0}\": Host is reachable.", proxy.Name));
                     detectedProxy = proxy;
                     waitHandle.Set();
                     return;
                 }
             }
 
-            Trace.WriteLine(string.Format(CultureInfo.CurrentCulture, "Checked {0}: Proxy is not reachable.", proxy.Name));
+            Log(string.Format(CultureInfo.CurrentCulture, "Checked \"{0}\": Proxy is not reachable.", proxy.Name));
         }
 
         /// <summary>
@@ -206,23 +210,21 @@ namespace ProxyMonitor
         #region Set Proxy Server
 
         /// <summary>
-        /// Sets the proxy server.
+        /// Sets the selected proxy server for the given connection.
         /// </summary>
-        /// <param name="proxy">The proxy server to set.</param>
-        /// <param name="connection">The connection to set, or null for the LAN connection</param>
-        public static void SetProxyServer(ProxyServerElement proxy, ConnectionElement connection)
+        /// <param name="connection">The connection for which to set its <see cref="ConnectionElement.SelectedProxyServer"/>.</param>
+        public static void ApplySelectedProxyServer(ConnectionElement connection)
         {
-            int proxyEnable = 0;
+            ProxyServerElement proxy = connection.SelectedProxyServer;
             string proxyServer = "";
             string proxyOverride = "";
             string proxyAutoConfigURL = "";
-            string connection_name = (connection == (ConnectionElement)null) ? "" : connection.Name;
+            string connectionName = (connection.IsLanConnection ? null : connection.Name);
 
             if (proxy != null)
             {
                 if (!string.IsNullOrEmpty(proxy.Host))
                 {
-                    proxyEnable = 1;
                     proxyServer = proxy.Host + ":" + proxy.Port;
                 }
                 if (!string.IsNullOrEmpty(proxy.AutoConfigUrl))
@@ -234,18 +236,18 @@ namespace ProxyMonitor
                 {
                     proxyOverride = proxy.BypassList + ";" + proxyOverride;
                 }
-                Trace.WriteLine(string.Format(CultureInfo.CurrentCulture, "Setting proxy server {0}: Enable={1}, Server={2}, Override={3}, AutoConfigURL={4}", proxy.Name, proxyEnable, proxyServer, proxyOverride, proxyAutoConfigURL));
+                Log(string.Format(CultureInfo.CurrentCulture, "Setting proxy server \"{0}\" for connection \"{1}\": Server=\"{2}\", Override=\"{3}\", AutoConfigURL=\"{4}\"", proxy.Name, connection.Name, proxyServer, proxyOverride, proxyAutoConfigURL));
             }
             else
             {
-                Trace.WriteLine("Disabling proxy server");
+                Log(string.Format(CultureInfo.CurrentCulture, "Disabling proxy server for connection \"{0}\"", connection.Name));
             }
 
-            WininetProxy.SetProxyInfo(connection_name, proxyServer, proxyOverride, proxyAutoConfigURL);
+            WininetProxy.SetProxyInfo(connectionName, proxyServer, proxyOverride, proxyAutoConfigURL);
 
             if (proxy != null && !string.IsNullOrEmpty(proxy.Command))
             {
-                Trace.WriteLine("Executing command: " + proxy.Command);
+                Log("Executing command: " + proxy.Command);
                 try
                 {
                     Process.Start(proxy.Command);
@@ -255,6 +257,19 @@ namespace ProxyMonitor
                     throw new ArgumentException("Error while executing the configured command: " + exc.Message, exc);
                 }
             }
+        }
+
+        #endregion
+
+        #region Log
+
+        /// <summary>
+        /// Logs the specified message.
+        /// </summary>
+        /// <param name="message">The message to log.</param>
+        private static void Log(string message)
+        {
+            Trace.WriteLine(string.Format(CultureInfo.CurrentCulture, "{0} - {1}", DateTime.Now.ToLongTimeString(), message));
         }
 
         #endregion

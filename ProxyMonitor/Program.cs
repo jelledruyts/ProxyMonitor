@@ -12,7 +12,6 @@ namespace ProxyMonitor
         [STAThread]
         public static void Main(string[] args)
         {
-            TrayMonitor monitor = null;
             try
             {
                 bool detectAndQuit = false;
@@ -30,21 +29,16 @@ namespace ProxyMonitor
                 }
                 Application.EnableVisualStyles();
                 Application.SetCompatibleTextRenderingDefault(false);
-                monitor = new TrayMonitor(detectAndQuit);
-                monitor.DetectProxy();
-                Application.Run();
+                using (TrayMonitor monitor = new TrayMonitor(detectAndQuit))
+                {
+                    monitor.DetectProxyServers();
+                    Application.Run();
+                }
             }
             catch (Exception exc)
             {
-                string message = string.Format(CultureInfo.CurrentCulture, "An unexpected exception occurred, please forgive the machine and blame the author.{0}{0}Exception message: {1}", Environment.NewLine, exc.Message);
+                string message = string.Format(CultureInfo.CurrentCulture, "An unexpected exception occurred, please forgive the machine and blame the authors.{0}{0}Exception message: {1}", Environment.NewLine, exc.Message);
                 MessageBox.Show(message, "An exception occurred...", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
-            finally
-            {
-                if (monitor != null)
-                {
-                    monitor.Dispose();
-                }
             }
         }
     }

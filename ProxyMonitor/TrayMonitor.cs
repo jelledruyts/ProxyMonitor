@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Net.NetworkInformation;
 using System.Reflection;
 using System.Text;
@@ -30,6 +31,11 @@ namespace ProxyMonitor
         /// The notify icon to use.
         /// </summary>
         private NotifyIcon notifyIcon;
+
+        /// <summary>
+        /// Used to execute the proxy server detection on a background thread.
+        /// </summary>
+        private BackgroundWorker backgroundWorker;
 
         #endregion
 
@@ -70,6 +76,10 @@ namespace ProxyMonitor
             this.notifyIcon.ContextMenu = contextMenu;
             this.notifyIcon.Icon = Resources.ProxyOff;
             this.notifyIcon.Visible = true;
+
+            this.backgroundWorker = new BackgroundWorker();
+            this.backgroundWorker.DoWork += new DoWorkEventHandler(worker_DoWork);
+            this.backgroundWorker.RunWorkerCompleted += new RunWorkerCompletedEventHandler(worker_RunWorkerCompleted);
 
             NetworkChange.NetworkAddressChanged += DetectProxyServersRequested;
         }
@@ -186,7 +196,16 @@ namespace ProxyMonitor
         internal void DetectProxyServers()
         {
             this.notifyIcon.Text = "Detecting Proxy...";
+            this.backgroundWorker.RunWorkerAsync();
+        }
+
+        void worker_DoWork(object sender, DoWorkEventArgs e)
+        {
             ProxyDetector.DetectProxyServers();
+        }
+
+        void worker_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
+        {
             ShowSelectedProxies();
         }
 
@@ -249,6 +268,11 @@ namespace ProxyMonitor
             {
                 this.notifyIcon.Dispose();
                 this.notifyIcon = null;
+            }
+            if (this.backgroundWorker != null)
+            {
+                this.backgroundWorker.Dispose();
+                this.backgroundWorker = null;
             }
         }
 

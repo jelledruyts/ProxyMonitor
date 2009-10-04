@@ -243,7 +243,7 @@ namespace ProxyMonitor
                 Log(string.Format(CultureInfo.CurrentCulture, "Disabling proxy server for connection \"{0}\"", connection.Name));
             }
 
-            WininetProxy.SetProxyInfo(connectionName, proxyServer, proxyOverride, proxyAutoConfigURL);
+            NativeMethods.SetProxyInfo(connectionName, proxyServer, proxyOverride, proxyAutoConfigURL);
 
             if (proxy != null && !string.IsNullOrEmpty(proxy.Command))
             {

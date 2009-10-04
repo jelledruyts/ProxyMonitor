@@ -66,7 +66,7 @@ namespace ProxyMonitor.Configuration
             {
                 return (ProxyServerElementCollection)base[ProxyServersPropertyName];
             }
-            set
+            private set
             {
                 base[ProxyServersPropertyName] = value;
             }

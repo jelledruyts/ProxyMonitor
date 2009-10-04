@@ -5,6 +5,7 @@ namespace ProxyMonitor.Configuration
     /// <summary>
     /// Defines a collection of <see cref="ConnectionElement"/> instances.
     /// </summary>
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1010:CollectionsShouldImplementGenericInterface")]
     public class ConnectionElementCollection : ConfigurationElementCollection
     {
         #region Constants

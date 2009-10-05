@@ -37,7 +37,7 @@ namespace ProxyMonitor.Configuration
         /// <summary>
         /// Gets or sets the number of milliseconds for the ping to timeout.
         /// </summary>
-        [ConfigurationProperty(PingTimeoutPropertyName, IsRequired = false, DefaultValue = 1000)]
+        [ConfigurationProperty(PingTimeoutPropertyName, IsRequired = false, DefaultValue = 3000)]
         public int PingTimeout
         {
             get

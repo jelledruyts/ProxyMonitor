@@ -196,15 +196,28 @@ namespace ProxyMonitor
         internal void DetectProxyServers()
         {
             this.notifyIcon.Text = "Detecting Proxy...";
-            this.backgroundWorker.RunWorkerAsync();
+            if (!this.backgroundWorker.IsBusy)
+            {
+                this.backgroundWorker.RunWorkerAsync();
+            }
         }
 
-        void worker_DoWork(object sender, DoWorkEventArgs e)
+        /// <summary>
+        /// Handles the DoWork event of the worker control.
+        /// </summary>
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">The <see cref="System.ComponentModel.DoWorkEventArgs"/> instance containing the event data.</param>
+        private void worker_DoWork(object sender, DoWorkEventArgs e)
         {
             ProxyDetector.DetectProxyServers();
         }
 
-        void worker_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
+        /// <summary>
+        /// Handles the RunWorkerCompleted event of the worker control.
+        /// </summary>
+        /// <param name="sender">The source of the event.</param>
+        /// <param name="e">The <see cref="System.ComponentModel.RunWorkerCompletedEventArgs"/> instance containing the event data.</param>
+        private void worker_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
         {
             ShowSelectedProxies();
         }

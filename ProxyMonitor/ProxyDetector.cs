@@ -15,12 +15,7 @@ namespace ProxyMonitor
     /// </summary>
     internal static class ProxyDetector
     {
-        #region Fields & Properties
-
-        /// <summary>
-        /// Stores the detected proxy.
-        /// </summary>
-        private static ProxyServerElement detectedProxy;
+        #region Fields
 
         /// <summary>
         /// An object to lock on while detecting the proxy.
@@ -28,15 +23,17 @@ namespace ProxyMonitor
         private static object lockObject = new object();
 
         /// <summary>
-        /// Represents the method that will check if a proxy is reachable.
-        /// </summary>
-        /// <param name="proxy">The proxy to check.</param>
-        private delegate void CheckProxyDelegate(ProxyServerElement proxy);
-
-        /// <summary>
         /// The wait handle that signals when a proxy server is detected.
         /// </summary>
         private static AutoResetEvent waitHandle;
+
+        /// <summary>
+        /// Represents the method that will check if a proxy is reachable.
+        /// </summary>
+        /// <param name="proxy">The proxy to check.</param>
+        /// <param name="timeout">The timeout in milliseconds.</param>
+        /// <returns>The proxy if it was reachable, <see langword="null"/> otherwise.</returns>
+        private delegate ProxyServerElement CheckProxyDelegate(ProxyServerElement proxy, int timeout);
 
         #endregion
 
@@ -71,9 +68,11 @@ namespace ProxyMonitor
         {
             lock (lockObject)
             {
-                Log(string.Format(CultureInfo.CurrentCulture, "Detecting proxy to use on connection \"{0}\"...", connection.Name));
-                detectedProxy = null;
                 waitHandle = new AutoResetEvent(false);
+
+                // Determine the timeout value to use.
+                int timeout = ProxyConfiguration.Instance.PingTimeout;
+                Log(string.Format(CultureInfo.CurrentCulture, "Detecting proxy to use on connection \"{0}\" with timeout of {1} milliseconds...", connection.Name, timeout));
 
                 // Queue async operations to detect the proxy.
                 List<IAsyncResult> results = new List<IAsyncResult>();
@@ -82,15 +81,25 @@ namespace ProxyMonitor
                     if (!configuredProxy.SkipAutoDetect)
                     {
                         CheckProxyDelegate proxyDetector = new CheckProxyDelegate(CheckProxy);
-                        IAsyncResult result = proxyDetector.BeginInvoke(configuredProxy, null, null);
+                        IAsyncResult result = proxyDetector.BeginInvoke(configuredProxy, timeout, null, proxyDetector);
                         results.Add(result);
                     }
                 }
 
                 // Wait for the results to come in.
+                Stopwatch watch = new Stopwatch();
+                watch.Start();
                 bool keepWaiting = true;
                 while (keepWaiting)
                 {
+                    // See if the entire operation timed out by now.
+                    if (watch.ElapsedMilliseconds > timeout)
+                    {
+                        Log("Proxy detection timed out, aborting.");
+                        keepWaiting = false;
+                        break;
+                    }
+
                     // See if a proxy was found by checking the wait handle with a timeout.
                     bool signaled = waitHandle.WaitOne(250, false);
                     if (signaled)
@@ -116,6 +125,21 @@ namespace ProxyMonitor
                     }
                 }
 
+                // Either one of the proxies was reachable or all of them timed out.
+                // Find the first one to return a proxy.
+                ProxyServerElement detectedProxy = null;
+                foreach (IAsyncResult result in results)
+                {
+                    if (result.IsCompleted)
+                    {
+                        CheckProxyDelegate proxyDetector = (CheckProxyDelegate)result.AsyncState;
+                        detectedProxy = proxyDetector.EndInvoke(result);
+                        if (detectedProxy != null)
+                        {
+                            break;
+                        }
+                    }
+                }
                 connection.SelectedProxyServer = detectedProxy;
                 ApplySelectedProxyServer(connection);
             }
@@ -125,7 +149,9 @@ namespace ProxyMonitor
         /// Checks if the given proxy is reachable.
         /// </summary>
         /// <param name="proxy">The proxy to check.</param>
-        private static void CheckProxy(ProxyServerElement proxy)
+        /// <param name="timeout">The timeout in milliseconds.</param>
+        /// <returns>The proxy if it was reachable, <see langword="null"/> otherwise.</returns>
+        private static ProxyServerElement CheckProxy(ProxyServerElement proxy, int timeout)
         {
             if (!string.IsNullOrEmpty(proxy.AutoConfigUrl))
             {
@@ -133,25 +159,24 @@ namespace ProxyMonitor
                 if (IsUrlReachable(proxy.AutoConfigUrl))
                 {
                     Log(string.Format(CultureInfo.CurrentCulture, "Checked \"{0}\": AutoConfigUrl is reachable.", proxy.Name));
-                    detectedProxy = proxy;
                     waitHandle.Set();
-                    return;
+                    return proxy;
                 }
             }
 
             if (!string.IsNullOrEmpty(proxy.Host))
             {
                 Log(string.Format(CultureInfo.CurrentCulture, "Checking \"{0}\": Pinging Host.", proxy.Name));
-                if (IsHostReachable(proxy.Host, ProxyConfiguration.Instance.PingTimeout))
+                if (IsHostReachable(proxy.Host, timeout))
                 {
                     Log(string.Format(CultureInfo.CurrentCulture, "Checked \"{0}\": Host is reachable.", proxy.Name));
-                    detectedProxy = proxy;
                     waitHandle.Set();
-                    return;
+                    return proxy;
                 }
             }
 
             Log(string.Format(CultureInfo.CurrentCulture, "Checked \"{0}\": Proxy is not reachable.", proxy.Name));
+            return null;
         }
 
         /// <summary>
@@ -182,15 +207,15 @@ namespace ProxyMonitor
         /// Determines whether the specified host is reachable.
         /// </summary>
         /// <param name="host">The host to check.</param>
-        /// <param name="pingTimeout">The ping timeout in milliseconds.</param>
+        /// <param name="timeout">The timeout in milliseconds.</param>
         /// <returns><see langword="true"/> if the specified host is reachable; otherwise, <see langword="false"/>.</returns>
-        private static bool IsHostReachable(string host, int pingTimeout)
+        private static bool IsHostReachable(string host, int timeout)
         {
             bool reachable = false;
             try
             {
                 Ping ping = new Ping();
-                PingReply reply = ping.Send(host, pingTimeout);
+                PingReply reply = ping.Send(host, timeout);
                 if (reply.Status == IPStatus.Success)
                 {
                     reachable = true;

@@ -3,6 +3,13 @@ Microsoft Visual Studio Solution File, Format Version 10.00
 # Visual Studio 2008
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ProxyMonitor", "ProxyMonitor\ProxyMonitor.csproj", "{A94C362E-AC2F-4C99-AAC2-9AF6F4450C87}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Resources", "Resources", "{F7916427-C3D4-4D0C-A7B5-46122383B9AF}"
+	ProjectSection(SolutionItems) = preProject
+		Resources\ProxyMonitorProxyDetected.png = Resources\ProxyMonitorProxyDetected.png
+		Resources\ProxyMonitorSetProxy.png = Resources\ProxyMonitorSetProxy.png
+		Resources\WikiHomepage.txt = Resources\WikiHomepage.txt
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(TeamFoundationVersionControl) = preSolution
 		SccNumberOfProjects = 2

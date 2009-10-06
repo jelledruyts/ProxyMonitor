@@ -96,10 +96,10 @@
     <None Include="Properties\ProxyOff.ico" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Documentation\Images\MenuItems.png">
+    <None Include="Documentation\Images\ProxyMonitorSetProxy.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Include="Documentation\Images\NotificationIcon.png">
+    <None Include="Documentation\Images\ProxyMonitorProxyDetected.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Include="Documentation\Readme.html">

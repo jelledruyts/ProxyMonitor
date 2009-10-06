@@ -8,7 +8,7 @@
             font-family: Calibri, Verdana, Sans-Serif;
             font-size: smaller;
         }
-        h1, h2
+        h1, h2, h3
         {
             font-family: Cambria, Verdana, Sans-Serif;
             color: #385B86;
@@ -22,6 +22,11 @@
         h2
         {
             font-size: medium;
+            font-weight: bold;
+        }
+        h3
+        {
+            font-size: small;
             font-weight: bold;
         }
         pre, code
@@ -40,7 +45,7 @@
         Proxy Monitor is a small application that monitors the network and auto-detects
         the internet proxy server to use.</p>
     <p>
-        <img src="Images/NotificationIcon.png" alt="Proxy Monitor Notification Icon" /></p>
+        <img src="Images/ProxyMonitorProxyDetected.png" alt="Proxy Monitor Notification Icon" /></p>
     <h2>
         Installation</h2>
     <p>
@@ -62,26 +67,59 @@
     <p>
         You can right-click the icon to manually set the proxy server or to trigger an auto-detection.</p>
     <p>
-        <img src="Images/MenuItems.png" alt="Proxy Monitor Menu" /></p>
+        <img src="Images/ProxyMonitorSetProxy.png" alt="Proxy Monitor Menu" /></p>
     <p>
         The application can also be run from the command-line with the /detect flag to auto-detect
         the proxy and exit immediately (e.g. when the computer starts up).</p>
     <h2>
         Configuration</h2>
+    <h3>
+        General Structure</h3>
     <p>
         The application must be configured to include the definitions of the known proxy
-        servers. This involves changing the ProxyMonitor.exe.config file in a text editor
-        to list all known proxy servers in the <code>&lt;proxyServers&gt;</code> element.</p>
+        servers. This involves changing the ProxyMonitor.exe.config XML file in a text editor.
+        The structure of the file and a sample configuration file are explained below.</p>
     <p>
-        Each proxy server must be represented as a <code>&lt;proxyServer&gt;</code> element
-        with the following attributes:</p>
+        At the root, the <code>&lt;proxyConfiguration&gt;</code> element defines the general
+        Proxy Monitor configuration settings.</p>
+    <p>
+        Beneath it, the <code>&lt;proxyServers&gt;</code> element defines all known proxy
+        servers in separate <code>&lt;proxyServer&gt;</code> elements. This group defines
+        your general Local Area Network (LAN) settings that apply to your normal network
+        settings.</p>
+    <p>
+        If you have additional connections such as dial-up or Virtual Private Network (VPN)
+        connections for which you want to specify different proxy servers, you can optionally
+        define a <code>&lt;connections&gt;</code> element, which contains a list of <code>&lt;connection&gt;</code>
+        elements that contains the same <code>&lt;proxyServers&gt;</code> structure as above.</p>
+    <h3>
+        Proxy Monitor Configuration</h3>
+    <p>
+        The general Proxy Monitor configuration element <code>&lt;proxyConfiguration&gt;</code>
+        has the following attributes:</p>
+    <ul>
+        <li><code>pingTimeout</code>: the maximum time (in milliseconds) a proxy detection should
+            take; if none of the configured proxy servers has responded within this time, no
+            proxy server is selected. The default is 3000 milliseconds.</li>
+        <li><code>disableNotifications</code>: allows you to disable all proxy change notifications
+            (balloon tips) by setting the value to <code>true</code>. The default is <code>false</code>.
+        </li>
+    </ul>
+    <h3>
+        Proxy Servers</h3>
+    <p>
+        Each proxy server (either within or outside a <code>&lt;connection&gt;</code> element,
+        but always in a <code>&lt;proxyServers&gt;</code> element) must be represented as
+        a <code>&lt;proxyServer&gt;</code> element with the following attributes:</p>
     <ul>
         <li><code>name</code>: the friendly name of the proxy server. This will show up in the
             context menu of the application icon in the notification area.</li>
         <li><code>host</code>: the IP-address or host name of the proxy server.</li>
-        <li><code>port</code>: the TCP port to use on the proxy server (defaults to port 80).</li>
-        <li><code>bypassForLocalAddresses</code>: set to true to bypass the proxy server for
-            local addresses, or false to always use the proxy server (defaults to true).</li>
+        <li><code>port</code>: the TCP port to use on the proxy server. The default is port
+            80.</li>
+        <li><code>bypassForLocalAddresses</code>: set to <code>true</code> to bypass the proxy
+            server for local addresses, or <code>false</code> to always use the proxy server.
+            The default is <code>true</code>.</li>
         <li><code>bypassList</code>: set to true to bypass the proxy server for local addresses,
             or false to always use the proxy server (defaults to true).</li>
         <li><code>autoConfigUrl</code>: set this to the url of an automatic proxy configuration
@@ -89,76 +127,131 @@
         <li><code>command</code>: the command (DOS command, batch file, ...) to execute if this
             proxy is used.</li>
         <li><code>skipAutoDetect</code>: skips auto-detection of this proxy server, so that
-            it only can be set manually through the context menu.</li>
+            it can only be set manually through the context menu.</li>
     </ul>
     <p>
         Only the <code>name</code> and either the <code>host</code> or <code>autoConfigUrl</code>
         attributes are mandatory.</p>
+    <h3>
+        Connections</h3>
     <p>
-        Each proxy server is in checked to see if it is available by attempting to download
-        the <code>autoConfigUrl</code> or by sending a ping command to the <code>host</code>.
-        When the download succeeded or a reply is received, the proxy server will be used
-        and optionally the <code>command</code> is executed. If needed, the ping timeout
-        value can be modified in the <code>pingTimeout</code> attribute of the <code>&lt;proxyConfiguration&gt;</code>
-        element (the default is 1000 milliseconds).</p>
+        Each connection must be represented as a <code>&lt;connection&gt;</code> element
+        with the following attributes:</p>
+    <ul>
+        <li><code>name</code>: the name of the connection as defined in the Internet Options
+            dialog of your system (this must be exactly the same name).</li>
+        <li><code>detectionDelay</code>: the time in milliseconds to wait before starting detection
+            of the proxy servers in this connection. This can be useful if you have a connection
+            that takes a while to get set up before the proxy servers become "visible" (e.g.
+            VPN networks with security checks that take some time to complete).</li>
+        <li><code>skipAutoDetect</code>: skips auto-detection of all proxy servers in this connection,
+            so that they can only be set manually through the context menu.</li>
+    </ul>
     <p>
-        It is also possible to disable all proxy change notifications (balloon tips) by
-        setting the <code>disableNotifications</code> attribute of the <code>&lt;proxyConfiguration&gt;</code>
-        element to <code>true</code> (the default is <code>false</code>).
+        Important to note is that the connections are checked in sequence, so if you have
+        a connection with a detection delay then the next connection won't be checked until
+        after the delay and the detection have completed.</p>
+    <h3>
+        Example Configuration</h3>
+    <p>
+        A sample configuration file looks as below.</p>
+    <p>
+        It defines two different proxy servers for the LAN: a Home and a Work proxy server.
+        The Home proxy is on a machine called "homeproxy" at port 8080. The Work proxy has
+        an automatic configuration script located at "http://workproxy/autoconfig.pac" and
+        if this one is detected, a "ConnectToShares" batch file is executed.</p>
+    <p>
+        A separate connection is also defined for a Virtual Private Network (VPN) connection.
+        It has a proxy server specific to the VPN connection, and an alternative proxy server
+        that is not automatically detected but can be manually selected if needed for some
+        reason. The automatic detection is delayed for 5 seconds to allow a security check
+        to complete.
     </p>
-    <p>
-        A sample configuration file looks as follows:</p>
     <pre>&lt;?xml version="1.0" encoding="utf-8" ?&gt;
 &lt;configuration&gt;
   &lt;configSections&gt;
     &lt;section name="proxyConfiguration"
-      type="ProxyMonitor.Configuration.ProxyConfiguration, ProxyMonitor"/&gt;
+      type="ProxyMonitor.Configuration.ProxyConfiguration, ProxyMonitor" /&gt;
   &lt;/configSections&gt;
-  &lt;proxyConfiguration pingTimeout="1000" disableNotifications="false"&gt;
+  &lt;proxyConfiguration pingTimeout="3000" disableNotifications="false"&gt;
     &lt;proxyServers&gt;
       &lt;proxyServer name="Home"
         host="homeproxy"
-        port="8080" 
-        bypassForLocalAddresses="false"
-        skipAutoDetect="false" /&gt;
+        port="8080"
+        bypassForLocalAddresses="true"
+        bypassList="server1;server2" /&gt;
       &lt;proxyServer name="Work"
         autoConfigUrl="http://workproxy/autoconfig.pac"
-        bypassForLocalAddresses="true" 
-        bypassList="server1;server2"
-        command="ConnectToShares.bat"
-        skipAutoDetect="false" /&gt;
+        command="ConnectToShares.bat" /&gt;
     &lt;/proxyServers&gt;
+    &lt;connections&gt;
+      &lt;connection name="VPN" detectionDelay="5000"&gt;
+        &lt;proxyServers&gt;
+          &lt;proxyServer name="VPN Work"
+            autoConfigUrl="http://workproxy/vpn_proxy.pac" /&gt;
+          &lt;proxyServer name="VPN Work (Alternate)"
+            autoConfigUrl="http://workproxy/vpn_proxy_alt.pac"
+            skipAutoDetect="true" /&gt;
+        &lt;/proxyServers&gt;
+      &lt;/connection&gt;
+    &lt;/connections&gt;
   &lt;/proxyConfiguration&gt;
 &lt;/configuration&gt;</pre>
     <h2>
-        What's New?</h2>
+        How It Works</h2>
+    <p>
+        When the application is started or when the network address has changed, each configured
+        proxy server is checked to see if it is available by attempting to download the
+        <code>autoConfigUrl</code> or by sending a ping command to the <code>host</code>
+        machine. When the download succeeded or a ping reply is received, the proxy server
+        will be used and optionally the <code>command</code> is executed.</p>
+    <p>
+        If you have also defined <code>connections</code>, the same process is followed
+        but any detected proxy server will only be set for the specified connection.</p>
     <h2>
-        v1.2 (08/09/2008)</h2>
+        What's New?</h2>
+    <h3>
+        v1.3 (October 10, 2009)</h3>
+    <ul>
+        <li>Thanks to David Huntley, the proxy servers are now set using the proper Windows
+            API's instead of writing directly to the registry. This means that setting the proxy
+            now works properly under all circumstances. Thanks a million David!</li>
+        <li>Also added by David Huntley is the support for connections, so you can specify proxy
+            servers for specific connections such as dial-up or VPN connections.</li>
+        <li>The ping timeout setting is now used to control the timeout for the entire proxy
+            detection. Previously, it was only used for an actual ping request but even in that
+            case, it did not include a 15 second timeout for a DNS query. So now the entire
+            check is guarded with a timeout.</li>
+        <li>The proxy detection is now performed on a background thread so the user interface
+            is not blocked.</li>
+    </ul>
+    <h3>
+        v1.2 (September 8, 2008)</h3>
     <ul>
         <li>Added the <code>skipAutoDetect</code> attribute to support proxies that are only
             set manually.</li>
         <li>Fixed the bug where Interet Explorer would override the proxy settings again (at
             random) to their previous values.</li>
     </ul>
-    <h2>
-        v1.1.0 (11/09/2007)</h2>
+    <h3>
+        v1.1.0 (September 9, 2007)</h3>
     <ul>
         <li>Added the <code>bypassList</code> attribute to support the proxy bypass list.</li>
         <li>Added the <code>disableNotifications</code> attribute to allow disabling notifications
             (balloon tips).</li>
     </ul>
-    <h2>
-        v1.0.60905 (05/09/2006)</h2>
+    <h3>
+        v1.0.60905 (September 5, 2006)</h3>
     <ul>
         <li>The configured proxy servers are now checked in parallel to speed up proxy detection.</li>
     </ul>
-    <h2>
-        v1.0.60807 (07/08/2006)</h2>
+    <h3>
+        v1.0.60807 (August 7, 2006)</h3>
     <ul>
         <li>A custom command can now be executed when the proxy server is set.</li>
     </ul>
-    <h2>
-        v1.0.60805 (05/08/2006)</h2>
+    <h3>
+        v1.0.60805 (August 5, 2006)</h3>
     <ul>
         <li>Besides pinging the <code>host</code>, the <code>autoConfigUrl</code> attribute
             of the <code>proxyServer</code> element is now used to determine if the proxy server
@@ -170,8 +263,8 @@
             was set.</li>
         <li>Better exception handling.</li>
     </ul>
-    <h2>
-        v1.0.60802 (02/08/2006)</h2>
+    <h3>
+        v1.0.60802 (August 2, 2006)</h3>
     <ul>
         <li>Initial Release.</li>
     </ul>

@@ -1,8 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics;
+using System.Globalization;
 using System.Net.NetworkInformation;
-using System.Reflection;
 using System.Text;
 using System.Windows.Forms;
 using ProxyMonitor.Configuration;
@@ -69,7 +70,7 @@ namespace ProxyMonitor
                 CreateProxyServerMenuItems(proxiesMenu, connection, nestedMenus);
             }
 
-            contextMenu.MenuItems.Add("&Detect Proxy", DetectProxyServersRequested);
+            contextMenu.MenuItems.Add("&Detect Proxy", DetectProxyServersRequestedByUser);
             contextMenu.MenuItems.Add("-");
             contextMenu.MenuItems.Add("E&xit", ExitRequested);
 
@@ -81,7 +82,7 @@ namespace ProxyMonitor
             this.backgroundWorker.DoWork += new DoWorkEventHandler(worker_DoWork);
             this.backgroundWorker.RunWorkerCompleted += new RunWorkerCompletedEventHandler(worker_RunWorkerCompleted);
 
-            NetworkChange.NetworkAddressChanged += DetectProxyServersRequested;
+            NetworkChange.NetworkAddressChanged += DetectProxyServersAfterNetworkChanged;
         }
 
         #endregion
@@ -117,8 +118,7 @@ namespace ProxyMonitor
         internal static void ShowAbout()
         {
             StringBuilder aboutText = new StringBuilder();
-            Version version = Assembly.GetExecutingAssembly().GetName().Version;
-            aboutText.AppendLine("Proxy Monitor v" + version.ToString(2));
+            aboutText.AppendLine("Proxy Monitor v" + Program.ApplicationVersion.ToString(2));
             aboutText.AppendLine("http://proxymonitor.codeplex.com").AppendLine();
             aboutText.AppendLine("Monitors the network and detects the proxy server to use.").AppendLine();
             aboutText.AppendLine("Usage: ProxyMonitor.exe [/detect]");
@@ -168,12 +168,21 @@ namespace ProxyMonitor
             ConnectionElement connection = selectedProxyMenu.Connection;
             ProxyServerElement proxyServer = selectedProxyMenu.ProxyServer;
 
+            if (proxyServer == null)
+            {
+                Logger.LogMessage(string.Format(CultureInfo.CurrentCulture, "User manually disabled proxy server for connection \"{0}\".", connection.Name), TraceEventType.Information);
+            }
+            else
+            {
+                Logger.LogMessage(string.Format(CultureInfo.CurrentCulture, "User manually selected proxy server \"{0}\" for connection \"{1}\".", proxyServer.Name, connection.Name), TraceEventType.Information);
+            }
+
             // Set the connection's selected proxy server and apply.
             connection.SelectedProxyServer = proxyServer;
             ProxyDetector.ApplySelectedProxyServer(connection);
 
             // Update the menu items and show a balloon.
-            ShowSelectedProxies();
+            ShowSelectedProxies(true);
         }
 
         #endregion
@@ -181,24 +190,37 @@ namespace ProxyMonitor
         #region Detect Proxy
 
         /// <summary>
-        /// Called when a proxy detection is requested.
+        /// Called when a proxy detection is requested by the user.
         /// </summary>
         /// <param name="sender">The sender.</param>
         /// <param name="e">The <see cref="System.EventArgs"/> instance containing the event data.</param>
-        private void DetectProxyServersRequested(object sender, EventArgs e)
+        private void DetectProxyServersRequestedByUser(object sender, EventArgs e)
         {
-            DetectProxyServers();
+            Logger.LogMessage("User requested to detect proxy servers.", TraceEventType.Information);
+            DetectProxyServers(true);
+        }
+
+        /// <summary>
+        /// Called when a proxy detection is triggered by a network change event.
+        /// </summary>
+        /// <param name="sender">The sender.</param>
+        /// <param name="e">The <see cref="System.EventArgs"/> instance containing the event data.</param>
+        private void DetectProxyServersAfterNetworkChanged(object sender, EventArgs e)
+        {
+            Logger.LogMessage("Network address changed.", TraceEventType.Information);
+            DetectProxyServers(false);
         }
 
         /// <summary>
         /// Detects the proxy servers.
         /// </summary>
-        internal void DetectProxyServers()
+        /// <returns><see langword="true"/> if the detection was requested by the user, <see langword="false"/> otherwise.</returns>
+        internal void DetectProxyServers(bool userRequested)
         {
-            this.notifyIcon.Text = "Detecting Proxy...";
             if (!this.backgroundWorker.IsBusy)
             {
-                this.backgroundWorker.RunWorkerAsync();
+                this.notifyIcon.Text = "Detecting Proxy...";
+                this.backgroundWorker.RunWorkerAsync(userRequested);
             }
         }
 
@@ -209,7 +231,11 @@ namespace ProxyMonitor
         /// <param name="e">The <see cref="System.ComponentModel.DoWorkEventArgs"/> instance containing the event data.</param>
         private void worker_DoWork(object sender, DoWorkEventArgs e)
         {
-            ProxyDetector.DetectProxyServers();
+            // Show a message if the user requested the detection or if a proxy has changed.
+            bool userRequested = (bool)e.Argument;
+            bool hasAnyProxyChanged = ProxyDetector.DetectProxyServers();
+            bool showBalloonMessage = userRequested || hasAnyProxyChanged;
+            e.Result = showBalloonMessage;
         }
 
         /// <summary>
@@ -219,13 +245,18 @@ namespace ProxyMonitor
         /// <param name="e">The <see cref="System.ComponentModel.RunWorkerCompletedEventArgs"/> instance containing the event data.</param>
         private void worker_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
         {
-            ShowSelectedProxies();
+            bool showBalloonMessage = (bool)e.Result;
+            ShowSelectedProxies(showBalloonMessage);
         }
+
+        #endregion
+
+        #region ShowSelectedProxies
 
         /// <summary>
         /// Shows the selected proxy servers.
         /// </summary>
-        private void ShowSelectedProxies()
+        private void ShowSelectedProxies(bool showBalloonMessage)
         {
             // Select the corresponding menu items.
             foreach (ProxyServerMenuItem proxyMenu in proxyMenuList)
@@ -241,7 +272,7 @@ namespace ProxyMonitor
 
             // Create a message to show which proxy is selected for each connection.
             bool isAnyProxyEnabled = false;
-            StringBuilder message = new StringBuilder();
+            StringBuilder messageBuilder = new StringBuilder();
             foreach (ConnectionElement connection in ProxyConfiguration.Instance.AllConnections)
             {
                 string proxyServerName = "No proxy set";
@@ -250,21 +281,22 @@ namespace ProxyMonitor
                     isAnyProxyEnabled = true;
                     proxyServerName = connection.SelectedProxyServer.Name;
                 }
-                message.AppendFormat("{0}: {1}", connection.Name, proxyServerName).AppendLine();
+                messageBuilder.AppendFormat("{0}: {1}", connection.Name, proxyServerName).AppendLine();
             }
+            string message = messageBuilder.ToString();
 
             // Set up the notify icon and show a balloon message if allowed.
             this.notifyIcon.Icon = (isAnyProxyEnabled ? Resources.ProxyOn : Resources.ProxyOff);
-            string notificationMessage = message.ToString().Trim();
+            string notificationMessage = message.Trim();
             if (notificationMessage.Length > 63)
             {
                 // The text of a notification icon must be less than 64 characters.
                 notificationMessage = notificationMessage.Substring(0, 60) + "...";
             }
             this.notifyIcon.Text = notificationMessage;
-            if (!ProxyConfiguration.Instance.DisableNotifications)
+            if (showBalloonMessage && !ProxyConfiguration.Instance.DisableNotifications)
             {
-                this.notifyIcon.ShowBalloonTip(10, "Proxy Monitor", message.ToString(), ToolTipIcon.Info);
+                this.notifyIcon.ShowBalloonTip(10, "Proxy Monitor", message, ToolTipIcon.Info);
             }
         }
 

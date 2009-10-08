@@ -116,6 +116,7 @@ If you have also defined connections, the same process is followed but any detec
 * Also added by David Huntley is the support for connections, so you can specify proxy servers for specific connections such as dial-up or VPN connections.
 * The ping timeout setting is now used to control the timeout for the entire proxy detection. Previously, it was only used for an actual ping request but even in that case, it did not include a 15 second timeout for a DNS query. So now the entire check is guarded with a timeout.
 * The proxy detection is now performed on a background thread so the user interface is not blocked.
+* For troubleshooting purposes, information and error messages are now logged to a ProxyMonitor.log file (which is configurable in the ProxyMonitor.exe.config file).
 
 !!!! v1.2 (September 8, 2008)
 * Added the skipAutoDetect attribute to support proxies that are only set manually.

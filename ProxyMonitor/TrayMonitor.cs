@@ -170,11 +170,11 @@ namespace ProxyMonitor
 
             if (proxyServer == null)
             {
-                Logger.LogMessage(string.Format(CultureInfo.CurrentCulture, "User manually disabled proxy server for connection \"{0}\".", connection.Name), TraceEventType.Information);
+                Logger.LogMessage(string.Format(CultureInfo.CurrentCulture, "User manually disabled proxy server for connection \"{0}\".", connection.Name), TraceEventType.Verbose);
             }
             else
             {
-                Logger.LogMessage(string.Format(CultureInfo.CurrentCulture, "User manually selected proxy server \"{0}\" for connection \"{1}\".", proxyServer.Name, connection.Name), TraceEventType.Information);
+                Logger.LogMessage(string.Format(CultureInfo.CurrentCulture, "User manually selected proxy server \"{0}\" for connection \"{1}\".", proxyServer.Name, connection.Name), TraceEventType.Verbose);
             }
 
             // Set the connection's selected proxy server and apply.
@@ -196,7 +196,7 @@ namespace ProxyMonitor
         /// <param name="e">The <see cref="System.EventArgs"/> instance containing the event data.</param>
         private void DetectProxyServersRequestedByUser(object sender, EventArgs e)
         {
-            Logger.LogMessage("User requested to detect proxy servers.", TraceEventType.Information);
+            Logger.LogMessage("User requested to detect proxy servers.", TraceEventType.Verbose);
             DetectProxyServers(true);
         }
 
@@ -207,7 +207,7 @@ namespace ProxyMonitor
         /// <param name="e">The <see cref="System.EventArgs"/> instance containing the event data.</param>
         private void DetectProxyServersAfterNetworkChanged(object sender, EventArgs e)
         {
-            Logger.LogMessage("Network address changed.", TraceEventType.Information);
+            Logger.LogMessage("Network address changed.", TraceEventType.Verbose);
             DetectProxyServers(false);
         }
 

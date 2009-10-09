@@ -47,7 +47,7 @@ namespace ProxyMonitor
         public static bool DetectProxyServers()
         {
             // Loop through all connections, and detect the proxy for each.
-            Logger.LogMessage("Detecting proxy servers.", TraceEventType.Information);
+            Logger.LogMessage("Detecting proxy servers.", TraceEventType.Verbose);
             bool hasAnyProxyChanged = false;
             foreach (ConnectionElement connection in ProxyConfiguration.Instance.AllConnections)
             {
@@ -55,7 +55,7 @@ namespace ProxyMonitor
                 {
                     if (connection.DetectionDelay > 0)
                     {
-                        Logger.LogMessage(string.Format(CultureInfo.CurrentCulture, "Waiting {0} milliseconds before detecting proxy on connection \"{1}\"...", connection.DetectionDelay, connection.Name), TraceEventType.Information);
+                        Logger.LogMessage(string.Format(CultureInfo.CurrentCulture, "Waiting {0} milliseconds before detecting proxy on connection \"{1}\"...", connection.DetectionDelay, connection.Name), TraceEventType.Verbose);
                         Thread.Sleep(connection.DetectionDelay);
                     }
 
@@ -82,7 +82,7 @@ namespace ProxyMonitor
 
                 // Determine the timeout value to use.
                 int timeout = ProxyConfiguration.Instance.PingTimeout;
-                Logger.LogMessage(string.Format(CultureInfo.CurrentCulture, "Detecting proxy to use on connection \"{0}\" with timeout of {1} milliseconds...", connection.Name, timeout), TraceEventType.Information);
+                Logger.LogMessage(string.Format(CultureInfo.CurrentCulture, "Detecting proxy to use on connection \"{0}\" with timeout of {1} milliseconds...", connection.Name, timeout), TraceEventType.Verbose);
 
                 // Queue async operations to detect the proxy.
                 List<IAsyncResult> results = new List<IAsyncResult>();
@@ -105,7 +105,7 @@ namespace ProxyMonitor
                     // See if the entire operation timed out by now.
                     if (watch.ElapsedMilliseconds > timeout)
                     {
-                        Logger.LogMessage("Proxy detection timed out, aborting.", TraceEventType.Information);
+                        Logger.LogMessage("Proxy detection timed out, aborting.", TraceEventType.Verbose);
                         keepWaiting = false;
                         break;
                     }
@@ -115,17 +115,14 @@ namespace ProxyMonitor
                     if (signaled)
                     {
                         // The wait handle was signaled, exit the loop.
-                        Logger.LogMessage("Wait handle was signaled", TraceEventType.Verbose);
                         keepWaiting = false;
                     }
                     else
                     {
                         // Wait for all of the async operations to complete.
-                        Logger.LogMessage("Wait handle was not signaled", TraceEventType.Verbose);
                         keepWaiting = false;
                         foreach (IAsyncResult result in results)
                         {
-                            Logger.LogMessage(" - Async operation completed? " + result.IsCompleted, TraceEventType.Verbose);
                             if (!result.IsCompleted)
                             {
                                 keepWaiting = true;
@@ -153,11 +150,11 @@ namespace ProxyMonitor
 
                 if (detectedProxy == null)
                 {
-                    Logger.LogMessage("Proxy detection complete, no proxy server was found.", TraceEventType.Information);
+                    Logger.LogMessage("Proxy detection complete, no proxy server was found.", TraceEventType.Verbose);
                 }
                 else
                 {
-                    Logger.LogMessage(string.Format(CultureInfo.CurrentCulture, "Proxy detection complete, proxy server \"{0}\" was found.", detectedProxy.Name), TraceEventType.Information);
+                    Logger.LogMessage(string.Format(CultureInfo.CurrentCulture, "Proxy detection complete, proxy server \"{0}\" was found.", detectedProxy.Name), TraceEventType.Verbose);
                 }
 
                 bool hasCurrentProxyChanged = false;
@@ -182,10 +179,10 @@ namespace ProxyMonitor
         {
             if (!string.IsNullOrEmpty(proxy.AutoConfigUrl))
             {
-                Logger.LogMessage(string.Format(CultureInfo.CurrentCulture, "Checking \"{0}\": Downloading AutoConfigUrl.", proxy.Name), TraceEventType.Information);
+                Logger.LogMessage(string.Format(CultureInfo.CurrentCulture, "Checking \"{0}\": Downloading AutoConfigUrl.", proxy.Name), TraceEventType.Verbose);
                 if (IsUrlReachable(proxy.AutoConfigUrl))
                 {
-                    Logger.LogMessage(string.Format(CultureInfo.CurrentCulture, "Checked \"{0}\": AutoConfigUrl is reachable.", proxy.Name), TraceEventType.Information);
+                    Logger.LogMessage(string.Format(CultureInfo.CurrentCulture, "Checked \"{0}\": AutoConfigUrl is reachable.", proxy.Name), TraceEventType.Verbose);
                     waitHandle.Set();
                     return proxy;
                 }
@@ -193,16 +190,16 @@ namespace ProxyMonitor
 
             if (!string.IsNullOrEmpty(proxy.Host))
             {
-                Logger.LogMessage(string.Format(CultureInfo.CurrentCulture, "Checking \"{0}\": Pinging Host.", proxy.Name), TraceEventType.Information);
+                Logger.LogMessage(string.Format(CultureInfo.CurrentCulture, "Checking \"{0}\": Pinging Host.", proxy.Name), TraceEventType.Verbose);
                 if (IsHostReachable(proxy.Host, timeout))
                 {
-                    Logger.LogMessage(string.Format(CultureInfo.CurrentCulture, "Checked \"{0}\": Host is reachable.", proxy.Name), TraceEventType.Information);
+                    Logger.LogMessage(string.Format(CultureInfo.CurrentCulture, "Checked \"{0}\": Host is reachable.", proxy.Name), TraceEventType.Verbose);
                     waitHandle.Set();
                     return proxy;
                 }
             }
 
-            Logger.LogMessage(string.Format(CultureInfo.CurrentCulture, "Checked \"{0}\": Proxy is not reachable.", proxy.Name), TraceEventType.Information);
+            Logger.LogMessage(string.Format(CultureInfo.CurrentCulture, "Checked \"{0}\": Proxy is not reachable.", proxy.Name), TraceEventType.Verbose);
             return null;
         }
 

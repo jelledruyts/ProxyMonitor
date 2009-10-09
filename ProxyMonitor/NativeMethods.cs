@@ -266,7 +266,7 @@ namespace ProxyMonitor
                 }
 
                 // Set up the request structure
-                request.szConnection = (string.IsNullOrEmpty(sConnection) ? IntPtr.Zero : Marshal.StringToCoTaskMemAnsi(sConnection));
+                request.szConnection = ((string.IsNullOrEmpty(sConnection) || sConnection == "LAN") ? IntPtr.Zero : Marshal.StringToCoTaskMemAnsi(sConnection));
                 request.dwOptionCount = option_array.Length;
                 request.options = buf;
                 request.dwSize = Marshal.SizeOf(typeof(InternetPerConnOptionList));

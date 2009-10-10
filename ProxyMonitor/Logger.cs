@@ -29,6 +29,7 @@ namespace ProxyMonitor
         {
             var logMessage = string.Format(CultureInfo.CurrentCulture, "[{0}] {1}", DateTime.Now.ToString(), message);
             trace.TraceEvent(level, 0, logMessage);
+            Debug.WriteLine(logMessage);
         }
 
         #endregion

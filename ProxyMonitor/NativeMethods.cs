@@ -92,7 +92,7 @@ namespace ProxyMonitor
         #region Wininet.dll Methods
 
         [DllImport("wininet.dll", SetLastError = true)]
-        [return:MarshalAs(UnmanagedType.Bool)]
+        [return: MarshalAs(UnmanagedType.Bool)]
         private static extern bool InternetSetOption(IntPtr hInternet, int dwOption, IntPtr lpBuffer, int lpdwBufferLength);
 
         [DllImport("wininet.dll", SetLastError = true)]
@@ -118,8 +118,9 @@ namespace ProxyMonitor
         /// <param name="sProxyServer">OUT: The proxy server</param>
         /// <param name="sProxyExceptions">OUT: The proxy exception list</param>
         /// <param name="sAutoConfigURL">OUT: The autoconfig URL</param>
+        /// <param name="bAutoDetect">OUT: Automatically Detect Settings</param>
         /// <returns>True if all is well.</returns>
-        static public bool GetProxyInfo(String sConnection, out String sProxyServer, out String sProxyExceptions, out String sAutoConfigURL)
+        static public bool GetProxyInfo(String sConnection, out String sProxyServer, out String sProxyExceptions, out String sAutoConfigURL, out bool? bAutoDetect)
         {
             InternetPerConnOptionList request;
             InternetPerConnOption[] option_array = new InternetPerConnOption[4];
@@ -133,6 +134,7 @@ namespace ProxyMonitor
             sProxyServer = String.Empty;
             sProxyExceptions = String.Empty;
             sAutoConfigURL = String.Empty;
+            bAutoDetect = null;
 
             // Fill out the option array with the stuff we're looking for
             option_array[0].option = OptionType.INTERNET_PER_CONN_FLAGS;
@@ -195,6 +197,8 @@ namespace ProxyMonitor
                     sAutoConfigURL = option_array[3].value.szValue == IntPtr.Zero ? String.Empty : Marshal.PtrToStringAnsi(option_array[3].value.szValue);
                 }
 
+                bAutoDetect = ((flags & ProxyFlag.PROXY_TYPE_AUTO_PROXY_URL) == ProxyFlag.PROXY_TYPE_AUTO_DETECT);
+
                 success = true;
             }
 
@@ -222,8 +226,9 @@ namespace ProxyMonitor
         /// <param name="sProxyServer">IN: Proxy server</param>
         /// <param name="sProxyExceptions">IN: Proxy exception list</param>
         /// <param name="sAutoConfigURL">IN: Autoconfig URL</param>
+        /// <param name="bAutoDetect">IN: Automatically Detect Settings</param>
         /// <returns>True if all is well</returns>
-        static public bool SetProxyInfo(String sConnection, String sProxyServer, String sProxyExceptions, String sAutoConfigURL)
+        static public bool SetProxyInfo(String sConnection, String sProxyServer, String sProxyExceptions, String sAutoConfigURL, bool bAutoDetect)
         {
             InternetPerConnOptionList request;
             InternetPerConnOption[] option_array = new InternetPerConnOption[4];
@@ -238,6 +243,7 @@ namespace ProxyMonitor
             flags = ProxyFlag.PROXY_TYPE_DIRECT;
             if (!String.IsNullOrEmpty(sProxyServer)) { flags |= ProxyFlag.PROXY_TYPE_PROXY; }
             if (!String.IsNullOrEmpty(sAutoConfigURL)) { flags |= ProxyFlag.PROXY_TYPE_AUTO_PROXY_URL; }
+            if (bAutoDetect) { flags |= ProxyFlag.PROXY_TYPE_AUTO_DETECT; }
             option_array[0].value.dwValue = (int)flags;
 
             option_array[1].option = OptionType.INTERNET_PER_CONN_PROXY_SERVER;

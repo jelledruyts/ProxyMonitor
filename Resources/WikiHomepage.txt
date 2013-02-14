@@ -48,6 +48,7 @@ Each proxy server (either within or outside a <connection> element, but always i
 * bypassList: set to true to bypass the proxy server for local addresses, or false to always use the proxy server (defaults to true).
 * autoConfigUrl: set this to the url of an automatic proxy configuration script, if available.
 * command: the command (DOS command, batch file, ...) to execute if this proxy is used.
+* autoDetectSettings: set to true to enable the "Automatically Detect Settings" configuration (defaults to false).
 * skipAutoDetect: skips auto-detection of this proxy server, so that it can only be set manually through the context menu.
 
 Only the name and either the host or autoConfigUrl attributes are mandatory.
@@ -92,9 +93,11 @@ A separate connection is also defined for a Virtual Private Network (VPN) connec
       <connection name="VPN" detectionDelay="5000">
         <proxyServers>
           <proxyServer name="VPN Work"
-            autoConfigUrl="http://workproxy/vpn_proxy.pac" />
+            autoConfigUrl="http://workproxy/vpn_proxy.pac"
+            autoDetectSettings="true" />
           <proxyServer name="VPN Work (Alternate)"
             autoConfigUrl="http://workproxy/vpn_proxy_alt.pac"
+            autoDetectSettings="true"
             skipAutoDetect="true" />
         </proxyServers>
       </connection>
@@ -110,6 +113,9 @@ When the application is started or when the network address has changed, each co
 If you have also defined connections, the same process is followed but any detected proxy server will only be set for the specified connection.
 
 !!! What's New?
+
+!!!! v1.4 (February 14, 2013)
+* Added support for the "Automatically Detect Settings" configuration.
 
 !!!! v1.3 (October 11, 2009)
 * Thanks to David Huntley, the proxy servers are now set using the proper Windows API's instead of writing directly to the registry. This means that setting the proxy now works properly under all circumstances. Thanks a million David!

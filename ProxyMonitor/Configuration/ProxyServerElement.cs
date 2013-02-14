@@ -17,6 +17,7 @@ namespace ProxyMonitor.Configuration
         private const string BypassListPropertyName = "bypassList";
         private const string CommandPropertyName = "command";
         private const string SkipAutoDetectPropertyName = "skipAutoDetect";
+        private const string AutoDetectSettingsPropertyName = "autoDetectSettings";
 
         #endregion
 
@@ -148,6 +149,22 @@ namespace ProxyMonitor.Configuration
             set
             {
                 base[SkipAutoDetectPropertyName] = value;
+            }
+        }
+
+        /// <summary>
+        /// Gets or sets a value that determines if this proxy server should be configured to automatically detect settings.
+        /// </summary>
+        [ConfigurationProperty(AutoDetectSettingsPropertyName, IsRequired = false, DefaultValue = false)]
+        public bool AutoDetectSettings
+        {
+            get
+            {
+                return (bool)base[AutoDetectSettingsPropertyName];
+            }
+            set
+            {
+                base[AutoDetectSettingsPropertyName] = value;
             }
         }
 

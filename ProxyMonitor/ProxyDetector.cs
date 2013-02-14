@@ -1,3 +1,4 @@
+using ProxyMonitor.Configuration;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -6,7 +7,6 @@ using System.Net;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using System.Threading;
-using ProxyMonitor.Configuration;
 
 namespace ProxyMonitor
 {
@@ -258,6 +258,7 @@ namespace ProxyMonitor
             string proxyOverride = "";
             string proxyAutoConfigURL = "";
             string connectionName = (connection.IsLanConnection ? null : connection.Name);
+            bool autoDetectSettings = false;
 
             if (proxy != null)
             {
@@ -274,14 +275,15 @@ namespace ProxyMonitor
                 {
                     proxyOverride = proxy.BypassList + ";" + proxyOverride;
                 }
-                Logger.LogMessage(string.Format(CultureInfo.CurrentCulture, "Setting proxy server \"{0}\" for connection \"{1}\": Server=\"{2}\", Override=\"{3}\", AutoConfigURL=\"{4}\"", proxy.Name, connection.Name, proxyServer, proxyOverride, proxyAutoConfigURL), TraceEventType.Information);
+                autoDetectSettings = proxy.AutoDetectSettings;
+                Logger.LogMessage(string.Format(CultureInfo.CurrentCulture, "Setting proxy server \"{0}\" for connection \"{1}\": Server=\"{2}\", Override=\"{3}\", AutoConfigURL=\"{4}\", AutoDetectSettings={5}", proxy.Name, connection.Name, proxyServer, proxyOverride, proxyAutoConfigURL, autoDetectSettings), TraceEventType.Information);
             }
             else
             {
                 Logger.LogMessage(string.Format(CultureInfo.CurrentCulture, "Disabling proxy server for connection \"{0}\"", connection.Name), TraceEventType.Information);
             }
 
-            NativeMethods.SetProxyInfo(connectionName, proxyServer, proxyOverride, proxyAutoConfigURL);
+            NativeMethods.SetProxyInfo(connectionName, proxyServer, proxyOverride, proxyAutoConfigURL, autoDetectSettings);
 
             if (proxy != null && !string.IsNullOrEmpty(proxy.Command))
             {

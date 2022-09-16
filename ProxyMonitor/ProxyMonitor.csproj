@@ -11,7 +11,6 @@
     <RootNamespace>ProxyMonitor</RootNamespace>
     <AssemblyName>ProxyMonitor</AssemblyName>
     <ApplicationIcon>Properties\ProxyOn.ico</ApplicationIcon>
-    <AssemblyOriginatorKeyFile>..\..\..\..\JelleDruyts.snk</AssemblyOriginatorKeyFile>
     <SignAssembly>false</SignAssembly>
     <SccProjectName>SAK</SccProjectName>
     <SccLocalPath>SAK</SccLocalPath>
